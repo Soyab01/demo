@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Raj Exam Hub | Test Series Edition</title>
+    
+    <!-- Design Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --primary: #6366f1; --secondary: #a855f7; --glass: rgba(255, 255, 255, 0.08); --dark-bg: #0f172a; }
+        body { background: radial-gradient(circle at top right, #1e1b4b, #0f172a); color: #f8fafc; font-family: 'Poppins', sans-serif; min-height: 100vh; padding-bottom: 120px; user-select: none; }
+        
+        .glass-card { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: 0.4s; transform-style: preserve-3d; }
+        .note-card:hover, .series-card:hover { transform: translateY(-8px) scale(1.02); border-color: var(--primary); }
+
+        /* Test Series Styling */
+        .series-thumb { width: 100%; height: 150px; border-radius: 15px; object-fit: cover; margin-bottom: 15px; border: 2px solid rgba(255,255,255,0.1); }
+        .test-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+        .locked { opacity: 0.5; cursor: not-allowed; }
+
+        /* Quiz UI */
+        #quiz-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 6000; padding: 20px; overflow-y: auto; }
+        .option-btn { display: block; width: 100%; padding: 15px; margin-bottom: 10px; background: var(--glass); border: 1px solid #444; border-radius: 12px; color: white; text-align: left; transition: 0.3s; }
+        .option-btn:hover { background: var(--primary); }
+        .option-btn.selected { background: var(--secondary); border-color: white; }
+
+        /* Auth & Nav */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark-bg); z-index: 5000; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
+        .btn-google { background: white; color: #333; border: none; padding: 12px 25px; border-radius: 50px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+        .nav-dock { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 550px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(25px); border-radius: 35px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 4000; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .nav-link-3d { color: rgba(255,255,255,0.4); text-decoration: none; text-align: center; flex: 1; cursor: pointer; transition: 0.4s; }
+        .nav-link-3d.active { color: var(--primary); transform: translateY(-5px); }
+        .nav-link-3d i { font-size: 1.2rem; display: block; }
+        .nav-link-3d span { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; }
+
+        .btn-buy { background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white; padding: 10px 20px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 0 #312e81; }
+        #main-app { display: none; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeInUp 0.4s ease-out; }
+        @keyframes fadeInUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+        iframe { width: 100%; height: 93vh; border: none; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <!-- 1. AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="glass-card text-center" style="max-width: 400px; width: 95%;">
+            <h2 class="fw-800">RAJ HUB</h2>
+            <p class="small opacity-75 mb-4">Premium Notes & Test Series</p>
+            <button class="btn-google mx-auto mb-3" onclick="login()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Reference_Icon.svg" width="22">
+                Sign in with Google
+            </button>
+            <div class="reviewer-box mt-3" style="border-top:1px solid #333; padding-top:15px;">
+                <input type="text" id="demo-user" class="form-control bg-dark text-white mb-2" placeholder="Demo Email">
+                <input type="password" id="demo-pass" class="form-control bg-dark text-white mb-2" placeholder="Password">
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="reviewerLogin()">Demo Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APP -->
+    <div id="main-app">
+        <header class="container pt-4">
+            <h3 class="fw-bold mb-0">RAJ<span class="text-primary">HUB</span></h3>
+        </header>
+
+        <div class="container mt-2">
+            
+            <!-- HOME PAGE (NOTES) -->
+            <div id="homePage" class="page active">
+                <div class="py-3"><h2 class="fw-800">Premium Notes</h2></div>
+                <div id="notesGrid"></div>
+            </div>
+
+            <!-- TEST SERIES PAGE -->
+            <div id="testPage" class="page">
+                <div class="py-3"><h2 class="fw-800">Test Series</h2></div>
+                <div id="seriesGrid"></div>
+            </div>
+
+            <!-- LIBRARY PAGE -->
+            <div id="purchasePage" class="page">
+                <div class="py-3"><h2>मेरी लाइब्रेरी</h2></div>
+                <div id="myLibraryGrid"></div>
+            </div>
+
+            <!-- PROFILE PAGE -->
+            <div id="profilePage" class="page">
+                <div class="glass-card text-center mt-4">
+                    <img id="u-img" src="" class="rounded-circle mb-3 shadow" style="width: 80px; border:3px solid var(--primary)">
+                    <h4 id="u-name">Student</h4>
+                    <p class="text-info small mb-4">Premium Member</p>
+                    <button class="btn btn-danger btn-sm rounded-pill w-100" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Dock -->
+        <div class="nav-dock">
+            <div class="nav-link-3d active" onclick="showPage('homePage', this)"><i class="fas fa-book"></i><span>Notes</span></div>
+            <div class="nav-link-3d" onclick="showPage('testPage', this)"><i class="fas fa-pen-nib"></i><span>Test Series</span></div>
+            <div class="nav-link-3d" onclick="showPage('purchasePage', this)"><i class="fas fa-book-open"></i><span>Library</span></div>
+            <div class="nav-link-3d" onclick="showPage('profilePage', this)"><i class="fas fa-user"></i><span>Profile</span></div>
+        </div>
+    </div>
+
+    <!-- QUIZ SYSTEM OVERLAY -->
+    <div id="quiz-overlay">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 id="quiz-title">Test 1</h5>
+            <button class="btn btn-sm btn-danger" onclick="closeQuiz()">Exit</button>
+        </div>
+        <div id="quiz-container">
+            <h4 id="question-text" class="mb-4">Question will appear here?</h4>
+            <div id="options-container"></div>
+            <button class="btn btn-primary w-100 mt-4 py-3 rounded-4" id="next-btn" onclick="nextQuestion()">Next Question</button>
+        </div>
+        <div id="result-container" style="display:none;" class="text-center">
+            <h2 class="text-success mb-3">Result!</h2>
+            <h1 id="score-text">0/0</h1>
+            <p id="feedback-text">Better luck next time!</p>
+            <button class="btn btn-success w-100 mt-4 py-3 rounded-4" onclick="closeQuiz()">Finish & Unlock Next</button>
+        </div>
+    </div>
+
+    <!-- Reader -->
+    <div id="reader-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999;">
+        <div class="p-3 d-flex justify-content-between"><span class="text-primary fw-bold">SECURE VIEW</span><button class="btn btn-danger btn-sm" onclick="closeReader()">Close X</button></div>
+        <iframe id="pdfViewer"></iframe>
+    </div>
+
+    <!-- Firebase & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo",
+            authDomain: "showpdf-ffa34.firebaseapp.com",
+            projectId: "showpdf-ffa34",
+            storageBucket: "showpdf-ffa34.firebasestorage.app",
+            messagingSenderId: "943291456891",
+            appId: "1:943291456891:web:b96e20acd76bd3463b71de"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.login = () => signInWithPopup(auth, provider);
+        window.logout = () => signOut(auth).then(() => location.reload());
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('u-name').innerText = user.displayName;
+                document.getElementById('u-img').src = user.photoURL;
+                renderNotes();
+                renderTestSeries();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+            }
+        });
+
+        window.reviewerLogin = () => {
+            if(document.getElementById('demo-user').value === "test@mnojnehra.com" && document.getElementById('demo-pass').value === "razorpay_test_2025") {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                renderNotes(); renderTestSeries();
+            } else { alert("Invalid Credentials"); }
+        }
+    </script>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const notesData = [
+            { id: 1, hi: "राजस्थान पुलिस - लक्ष्य नोट्स", cat: "Police", price: 99, file: "raj. police.pdf" },
+            { id: 2, hi: "कोटा सिटी गाइड", cat: "All", price: 49, file: "kota city.pdf" }
+        ];
+
+        // Test Series Data
+        const seriesData = [
+            { 
+                id: "series_1", 
+                title: "Rajasthan GK Special", 
+                price: 150, 
+                thumb: "https://images.unsplash.com/photo-1599508704512-2f19efd1e35f?auto=format&fit=crop&q=80&w=400",
+                tests: [
+                    { 
+                        id: "test_1", 
+                        name: "Test 1: Rajasthan History", 
+                        questions: [
+                            { q: "राजस्थान का राजकीय पशु क्या है?", a: ["चिंकारा", "बाघ", "हाथी", "शेर"], correct: 0 },
+                            { q: "हवामहल कहाँ स्थित है?", a: ["कोटा", "जयपुर", "जोधपुर", "उदयपुर"], correct: 1 }
+                        ]
+                    },
+                    { 
+                        id: "test_2", 
+                        name: "Test 2: Geography", 
+                        questions: [
+                            { q: "अरावली की सबसे ऊँची चोटी कौनसी है?", a: ["गुरु शिखर", "तारागढ़", "खो", "अचलगढ़"], correct: 0 }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        function renderNotes() {
+            let grid = document.getElementById('notesGrid'); grid.innerHTML = '';
+            notesData.forEach(n => {
+                let paid = localStorage.getItem(n.file);
+                grid.innerHTML += `<div class="glass-card d-flex align-items-center justify-content-between">
+                    <div><h6 class="mb-0 fw-bold">${n.hi}</h6><small class="text-info">${n.cat}</small></div>
+                    <button class="btn-buy btn-sm" onclick="${paid?`openReader('${n.file}')`:`payNow(${n.price},'${n.file}')`}">${paid?'पढ़ें':'₹'+n.price+' खरीदें'}</button>
+                </div>`;
+            });
+        }
+
+        function renderTestSeries() {
+            let grid = document.getElementById('seriesGrid'); grid.innerHTML = '';
+            seriesData.forEach(s => {
+                let isPaid = localStorage.getItem(s.id);
+                grid.innerHTML += `
+                    <div class="glass-card">
+                        <img src="${s.thumb}" class="series-thumb">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><h5 class="fw-bold mb-0">${s.title}</h5><small>${s.tests.length} Tests Available</small></div>
+                            ${!isPaid ? `<button class="btn-buy btn-sm" onclick="payNow(${s.price},'${s.id}')">₹${s.price} खरीदें</button>` : `<span class="badge bg-success">Purchased</span>`}
+                        </div>
+                        ${isPaid ? `<div class="mt-3">${renderTestItems(s)}</div>` : ''}
+                    </div>`;
+            });
+        }
+
+        function renderTestItems(series) {
+            return series.tests.map((t, index) => {
+                let isPrevDone = index === 0 || localStorage.getItem(series.tests[index-1].id + '_done');
+                return `
+                    <div class="test-item ${!isPrevDone ? 'locked' : ''}">
+                        <span>${t.name}</span>
+                        <button class="btn btn-primary btn-sm rounded-pill" ${!isPrevDone ? 'disabled' : ''} onclick="startQuiz('${series.id}', ${index})">
+                            ${localStorage.getItem(t.id + '_done') ? 'Retest' : 'Start'}
+                        </button>
+                    </div>`;
+            }).join('');
+        }
+
+        // Quiz Logic
+        let currentQuiz = null;
+        let qIndex = 0;
+        let score = 0;
+
+        function startQuiz(sId, tIdx) {
+            currentQuiz = seriesData.find(s => s.id === sId).tests[tIdx];
+            qIndex = 0; score = 0;
+            document.getElementById('quiz-overlay').style.display = 'block';
+            document.getElementById('quiz-container').style.display = 'block';
+            document.getElementById('result-container').style.display = 'none';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            let q = currentQuiz.questions[qIndex];
+            document.getElementById('question-text').innerText = q.q;
+            let optCont = document.getElementById('options-container');
+            optCont.innerHTML = q.a.map((opt, i) => `<button class="option-btn" onclick="checkAnswer(${i})">${opt}</button>`).join('');
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function checkAnswer(selected) {
+            if(selected === currentQuiz.questions[qIndex].correct) score++;
+            let btns = document.querySelectorAll('.option-btn');
+            btns.forEach((b, i) => {
+                b.disabled = true;
+                if(i === currentQuiz.questions[qIndex].correct) b.style.background = '#22c55e';
+                else if(i === selected) b.style.background = '#ef4444';
+            });
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            qIndex++;
+            if(qIndex < currentQuiz.questions.length) showQuestion();
+            else showResult();
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('result-container').style.display = 'block';
+            document.getElementById('score-text').innerText = `${score} / ${currentQuiz.questions.length}`;
+            localStorage.setItem(currentQuiz.id + '_done', 'true');
+            renderTestSeries();
+        }
+
+        function closeQuiz() { document.getElementById('quiz-overlay').style.display = 'none'; }
+        function showPage(pId, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(pId).classList.add('active'); document.querySelectorAll('.nav-link-3d').forEach(i => i.classList.remove('active')); el.classList.add('active'); }
+        function payNow(amt, id) { var options = { "key": "rzp_test_RwizK12wU5cyN6", "amount": amt * 100, "handler": function(res){ localStorage.setItem(id, "paid"); location.reload(); } }; new Razorpay(options).open(); }
+        function openReader(f) { document.getElementById('reader-overlay').style.display='block'; document.getElementById('pdfViewer').src = "https://docs.google.com/viewer?url=" + encodeURIComponent(window.location.href.split('index.html')[0] + f) + "&embedded=true"; }
+        function closeReader() { document.getElementById('reader-overlay').style.display='none'; }
+    </script>
+</body>
+</html>

@@ -4,77 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal | ExamPro</title>
+    
+    <!-- CSS & UI Frameworks -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase Stable SDK -->
+    <!-- FIREBASE COMPAT SDKs (Most Stable for Single HTML) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
     <style>
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .test-card { transition: all 0.3s ease; transform-style: preserve-3d; cursor: pointer; }
-        .test-card:hover { transform: translateY(-10px) rotateX(4deg); border-color: #6366f1; }
-        .screen { display: none; min-height: 100vh; animation: fadeIn 0.4s ease; }
-        .active-screen { display: block; }
+        .screen { display: none; min-height: 100vh; background: #020617; color: white; }
+        .active-screen { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-200">
+<body>
 
-    <!-- Screen 1: Login -->
-    <div id="login-screen" class="screen active-screen flex items-center justify-center p-6">
+    <!-- SCREEN: LOGIN -->
+    <div id="screen-login" class="screen active-screen flex items-center justify-center p-6">
         <div class="glass p-10 rounded-[3rem] text-center w-full max-w-sm shadow-2xl">
-            <div class="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-indigo-600/50">
-                <i class="fa-solid fa-graduation-cap text-4xl text-white"></i>
-            </div>
-            <h1 class="text-3xl font-black mb-2 tracking-tight">EXAM<span class="text-indigo-500">PRO</span></h1>
-            <p class="text-slate-400 mb-8 text-sm">Start your journey to success</p>
-            <button onclick="googleLogin()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Continue with Google
+            <h1 class="text-4xl font-black mb-4 italic text-indigo-500">EXAMPRO</h1>
+            <p class="text-slate-400 mb-8">Login to access your mock tests</p>
+            <button id="loginBtn" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition shadow-xl">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Sign in with Google
             </button>
+            <p id="error-msg" class="text-red-500 mt-4 text-xs font-mono"></p>
         </div>
     </div>
 
-    <!-- Screen 2: Home Dashboard -->
-    <div id="dashboard" class="screen">
-        <nav class="p-5 glass flex justify-between items-center sticky top-0 z-50 px-6 lg:px-12">
-            <h2 class="text-xl font-bold italic tracking-tighter">EXAM<span class="text-indigo-500">PRO</span></h2>
+    <!-- SCREEN: DASHBOARD -->
+    <div id="screen-dash" class="screen">
+        <nav class="p-5 glass sticky top-0 z-50 flex justify-between items-center px-10">
+            <h2 class="text-xl font-bold tracking-tighter">EXAMPRO</h2>
             <div class="flex items-center gap-4">
-                <img id="userImg" class="w-10 h-10 rounded-full border-2 border-indigo-500 shadow-md">
-                <button onclick="auth.signOut()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-right-from-bracket"></i></button>
+                <img id="u-photo" src="" class="w-10 h-10 rounded-full border-2 border-indigo-500">
+                <button onclick="logout()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </nav>
 
-        <main class="p-6 lg:p-12">
-            <div id="category-sections" class="space-y-12">
-                <!-- Data will load here dynamically -->
-                 <div class="animate-pulse flex flex-col gap-4">
-                    <div class="h-8 bg-slate-800 w-48 rounded-lg"></div>
-                    <div class="flex gap-4 overflow-hidden">
-                        <div class="min-w-[280px] h-64 bg-slate-800 rounded-3xl"></div>
-                        <div class="min-w-[280px] h-64 bg-slate-800 rounded-3xl"></div>
-                    </div>
-                 </div>
-            </div>
+        <main class="p-6 lg:p-12 space-y-12" id="dash-content">
+            <div class="text-center py-20 text-slate-500">Loading test series...</div>
         </main>
     </div>
 
-    <!-- Screen 3: Test Series Inside -->
-    <div id="test-content" class="screen p-6 lg:p-12">
-        <button onclick="showScreen('dashboard')" class="mb-8 text-indigo-400 flex items-center gap-2 font-bold"><i class="fa-solid fa-arrow-left"></i> Back to Home</button>
+    <!-- SCREEN: TESTS INSIDE -->
+    <div id="screen-tests" class="screen p-6">
+        <button onclick="switchScreen('screen-dash')" class="mb-8 text-indigo-400 font-bold"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
         <div class="max-w-4xl mx-auto">
-            <div id="series-header" class="mb-10"></div>
+            <h1 id="series-title" class="text-4xl font-black mb-10">--</h1>
             <div id="tests-list" class="space-y-4"></div>
         </div>
     </div>
 
     <script>
-        // 1. Config Fixed
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo",
             authDomain: "showpdf-ffa34.firebaseapp.com",
@@ -84,127 +73,145 @@
             messagingSenderId: "943291456891",
             appId: "1:943291456891:web:b96e20acd76bd3463b71de"
         };
+
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
+        let userUID = null;
 
-        let uid = "";
-
-        // 2. Fixed Google Login
-        function googleLogin() {
+        // --- LOGIN LOGIC ---
+        document.getElementById('loginBtn').addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => {
-                if(err.code === 'auth/popup-blocked') {
-                    Swal.fire('Popup Blocked', 'Please allow popups for this site', 'warning');
+            
+            // Explicitly set custom parameters to force account selection
+            provider.setCustomParameters({ prompt: 'select_account' });
+
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    console.log("Login Success:", result.user.displayName);
+                })
+                .catch((error) => {
+                    console.error("Login Error Details:", error);
+                    document.getElementById('error-msg').innerText = "Error: " + error.message;
+                    
+                    if (error.code === 'auth/popup-blocked') {
+                        Swal.fire('Popup Blocked', 'Please allow popups for Gmail login.', 'warning');
+                    }
+                });
+        });
+
+        // --- AUTH OBSERVER ---
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                userUID = user.uid;
+                document.getElementById('u-photo').src = user.photoURL;
+                switchScreen('screen-dash');
+                loadSeries();
+            } else {
+                switchScreen('screen-login');
+            }
+        });
+
+        function logout() {
+            auth.signOut().then(() => location.reload());
+        }
+
+        // --- DATA LOADING ---
+        function loadSeries() {
+            db.ref('testSeries').on('value', (snap) => {
+                const container = document.getElementById('dash-content');
+                container.innerHTML = "";
+                const data = snap.val();
+                if (!data) {
+                    container.innerHTML = "<p class='text-center text-slate-500'>No series added yet by Admin.</p>";
+                    return;
+                }
+
+                // Group by Category
+                const groups = {};
+                Object.keys(data).forEach(id => {
+                    const s = data[id];
+                    if (!groups[s.cat]) groups[s.cat] = [];
+                    groups[s.cat].push({ id, ...s });
+                });
+
+                Object.keys(groups).forEach(cat => {
+                    let html = `<div class='space-y-6'>
+                        <h3 class='text-2xl font-bold border-l-4 border-indigo-500 pl-4 uppercase tracking-tighter'>${cat}</h3>
+                        <div class='flex overflow-x-auto gap-6 pb-4 no-scrollbar'>`;
+                    
+                    groups[cat].forEach(item => {
+                        html += `
+                        <div class="min-w-[280px] max-w-[280px] glass p-4 rounded-[2.5rem] border border-white/5 shadow-xl hover:border-indigo-500 transition-all">
+                            <img src="${item.image}" class="w-full h-40 object-cover rounded-3xl mb-4">
+                            <h4 class="font-bold text-lg mb-4 line-clamp-1">${item.title}</h4>
+                            <div class="flex justify-between items-center mt-6">
+                                <span class="text-indigo-400 font-bold text-xl">₹${item.price}</span>
+                                <button onclick="checkAccess('${item.id}', ${item.price}, '${item.title}')" class="bg-indigo-600 px-6 py-2 rounded-2xl font-bold text-xs uppercase">Unlock</button>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                    container.innerHTML += html;
+                });
+            });
+        }
+
+        // --- PURCHASE & ACCESS ---
+        function checkAccess(id, price, title) {
+            db.ref(`users/${userUID}/purchases/${id}`).once('value', (snap) => {
+                if (snap.exists()) {
+                    openTestList(id, title);
                 } else {
-                    Swal.fire('Login Error', err.message, 'error');
+                    startPay(id, price, title);
                 }
             });
         }
 
-        // Auth Listener
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                uid = user.uid;
-                document.getElementById('userImg').src = user.photoURL;
-                showScreen('dashboard');
-                loadAllData();
-            } else {
-                showScreen('login-screen');
-            }
-        });
-
-        // 3. Load Data from Firebase
-        function loadAllData() {
-            db.ref('testSeries').on('value', snap => {
-                const sections = document.getElementById('category-sections');
-                sections.innerHTML = "";
-                const data = snap.val();
-                if(!data) { sections.innerHTML = "<p class='text-slate-500'>No test series available yet.</p>"; return; }
-
-                // Group by Category
-                const categories = {};
-                Object.keys(data).forEach(key => {
-                    const series = data[key];
-                    if(!categories[series.cat]) categories[series.cat] = [];
-                    categories[series.cat].push({id: key, ...series});
-                });
-
-                Object.keys(categories).forEach(cat => {
-                    let html = `<div class="space-y-6">
-                        <h3 class="text-2xl font-bold border-l-4 border-indigo-500 pl-4">${cat}</h3>
-                        <div class="flex overflow-x-auto gap-6 pb-4 no-scrollbar">`;
-                    
-                    categories[cat].forEach(item => {
-                        html += `
-                            <div class="min-w-[280px] max-w-[280px] glass p-4 rounded-[2.5rem] test-card border border-white/5 shadow-xl">
-                                <img src="${item.image}" class="w-full h-40 object-cover rounded-3xl mb-4 shadow-md">
-                                <h4 class="font-bold text-lg leading-tight mb-2">${item.title}</h4>
-                                <div class="flex justify-between items-center mt-6">
-                                    <span class="text-indigo-400 font-bold text-lg">₹${item.price}</span>
-                                    <button onclick="handleCheck('${item.id}', ${item.price}, '${item.title}')" class="bg-indigo-600 px-6 py-2 rounded-2xl font-bold text-xs">Buy Now</button>
-                                </div>
-                            </div>`;
-                    });
-                    html += `</div></div>`;
-                    sections.innerHTML += html;
-                });
-            });
-        }
-
-        // 4. Razorpay & Purchase Logic
-        function handleCheck(id, price, name) {
-            db.ref(`users/${uid}/purchases/${id}`).once('value', snap => {
-                if(snap.exists()) openSeries(id, name);
-                else startPayment(id, price, name);
-            });
-        }
-
-        function startPayment(id, amount, name) {
-            var options = {
+        function startPay(id, amt, name) {
+            const options = {
                 "key": "rzp_test_RwizK12wU5cyN6",
-                "amount": amount * 100,
+                "amount": amt * 100,
+                "currency": "INR",
                 "name": "ExamPro",
-                "description": "Unlock " + name,
-                "handler": function(res) {
-                    db.ref(`users/${uid}/purchases/${id}`).set(true);
-                    Swal.fire('Success', 'Series Unlocked!', 'success');
-                    openSeries(id, name);
+                "description": name,
+                "handler": function (response) {
+                    db.ref(`users/${userUID}/purchases/${id}`).set(true);
+                    Swal.fire('Payment Success!', 'Test series unlocked.', 'success');
+                    openTestList(id, name);
                 },
                 "theme": { "color": "#6366f1" }
             };
-            new Razorpay(options).open();
+            const rzp1 = new Razorpay(options);
+            rzp1.open();
         }
 
-        function openSeries(id, name) {
-            showScreen('test-content');
-            document.getElementById('series-header').innerHTML = `<h2 class="text-4xl font-black">${name}</h2><p class="text-slate-500 mt-2">All Mock Tests</p>`;
+        function openTestList(id, title) {
+            switchScreen('screen-tests');
+            document.getElementById('series-title').innerText = title;
             
-            db.ref('testSeries/' + id).once('value', snap => {
-                const s = snap.val();
+            db.ref('testSeries/' + id).once('value', (snap) => {
                 const box = document.getElementById('tests-list');
                 box.innerHTML = "";
-                // Mock test structure logic
-                const qs = JSON.parse(s.questions || "[]");
+                const qs = JSON.parse(snap.val().questions || "[]");
+                
                 qs.forEach((q, i) => {
-                    const isLocked = i > 0; // Simple logic: test 1 unlocked
+                    const isLocked = i > 0;
                     box.innerHTML += `
-                        <div class="glass p-6 rounded-3xl flex justify-between items-center ${isLocked ? 'opacity-40 cursor-not-allowed' : 'border-l-4 border-indigo-500'}">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center font-bold">${i+1}</div>
-                                <div><h4 class="font-bold">Mock Test 0${i+1}</h4><p class="text-xs text-slate-500">60 Minutes | 100 Marks</p></div>
-                            </div>
-                            ${isLocked ? '<i class="fa-solid fa-lock"></i>' : '<button onclick="startExam()" class="bg-indigo-600 px-6 py-2 rounded-full text-sm font-bold">Start</button>'}
-                        </div>`;
+                    <div class="glass p-6 rounded-3xl flex justify-between items-center ${isLocked ? 'opacity-40' : 'border-l-4 border-indigo-500'}">
+                        <div>
+                            <h4 class="font-bold">Mock Test #${i + 1}</h4>
+                            <p class="text-xs text-slate-500">Duration: 60 Mins • Marks: 100</p>
+                        </div>
+                        ${isLocked ? '<i class="fa-solid fa-lock"></i>' : '<button class="bg-indigo-600 px-6 py-2 rounded-full font-bold text-sm">Start Test</button>'}
+                    </div>`;
                 });
             });
         }
 
-        function startExam() {
-            Swal.fire('Exam Started', 'Interface is loading...', 'info');
-        }
-
-        function showScreen(id) {
+        // --- UI HELPERS ---
+        function switchScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById(id).classList.add('active-screen');
             window.scrollTo(0,0);

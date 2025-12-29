@@ -3,102 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testbook Pro - Firebase Edition</title>
-    
-    <!-- Scripts -->
+    <title>Student Portal - TestPro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Firebase SDKs (Compat Version for ease of use) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <style>
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
-        .test-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
+        .test-card { transition: all 0.4s; transform-style: preserve-3d; }
         .test-card:hover { transform: translateY(-10px) rotateY(5deg); }
-        .screen { display: none; }
-        .active-screen { display: block; animation: fadeIn 0.5s ease; }
+        .screen { display: none; animation: fadeIn 0.5s ease; }
+        .active-screen { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         .locked { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body class="bg-[#050811] text-white">
 
-    <!-- LOGIN SCREEN -->
+    <!-- Screen: Login -->
     <div id="login-screen" class="screen active-screen flex items-center justify-center min-h-screen">
-        <div class="glass p-10 rounded-[3rem] text-center max-w-sm w-full">
-            <h1 class="text-3xl font-black mb-6 italic text-indigo-500">TEST<span class="text-white">PRO</span></h1>
-            <p class="text-gray-400 mb-8">Login with Google to start your preparation.</p>
-            <button onclick="googleLogin()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-200 transition">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6">
-                Continue with Google
+        <div class="glass p-10 rounded-[3rem] text-center w-80">
+            <h1 class="text-3xl font-black mb-6 text-indigo-500 italic">TESTPRO</h1>
+            <button onclick="googleLogin()" class="w-full bg-white text-black py-4 rounded-2xl font-bold flex justify-center gap-2 items-center">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Login
             </button>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="main-dashboard" class="screen">
-        <header class="p-6 glass sticky top-0 z-50 flex justify-between items-center">
-            <div class="text-xl font-bold italic">TEST<span class="text-indigo-500">PRO</span></div>
-            <div class="flex items-center gap-4">
-                <button onclick="showAdmin()" id="admin-btn" class="hidden bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-xs font-bold border border-red-500/30">ADMIN PANEL</button>
-                <img id="user-photo" src="" class="w-10 h-10 rounded-full border-2 border-indigo-500">
-            </div>
-        </header>
+    <!-- Screen: Dashboard -->
+    <div id="dashboard" class="screen">
+        <nav class="p-6 glass flex justify-between items-center sticky top-0 z-50">
+            <h2 class="text-xl font-bold italic">TESTPRO</h2>
+            <img id="userImg" class="w-10 h-10 rounded-full border border-indigo-500">
+        </nav>
 
-        <!-- Category Horizontal Scroll -->
         <main class="p-6">
-            <h2 class="text-2xl font-bold mb-8">Recommended Series</h2>
-            <div id="series-container" class="flex overflow-x-auto gap-6 pb-10 no-scrollbar">
-                <!-- Data from Firebase will load here -->
+            <h3 class="text-2xl font-bold mb-6">Explore Test Series</h3>
+            <div id="series-container" class="flex overflow-x-auto gap-6 pb-6 no-scrollbar">
+                <!-- Live Data Load from Firebase -->
             </div>
         </main>
     </div>
 
-    <!-- TEST CONTENT SCREEN (After Buy) -->
+    <!-- Screen: Series Inside (Test List) -->
     <div id="test-list-screen" class="screen p-6">
-        <button onclick="switchScreen('main-dashboard')" class="mb-6 text-indigo-400"><i class="fa-solid fa-arrow-left"></i> Back</button>
-        <h2 id="current-series-name" class="text-3xl font-bold mb-8">--</h2>
-        <div id="tests-grid" class="max-w-3xl mx-auto space-y-4">
-            <!-- Tests from Firebase -->
-        </div>
-    </div>
-
-    <!-- ADMIN PANEL OVERLAY -->
-    <div id="admin-panel" class="screen fixed inset-0 bg-black/90 z-[100] p-6 overflow-y-auto">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex justify-between mb-10">
-                <h2 class="text-3xl font-bold">Admin Dashboard</h2>
-                <button onclick="switchScreen('main-dashboard')" class="bg-white text-black px-6 py-2 rounded-xl font-bold">Close</button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Add Category -->
-                <div class="glass p-6 rounded-3xl">
-                    <h3 class="font-bold mb-4">Add Category</h3>
-                    <input id="new-cat" type="text" placeholder="SSC, Railway..." class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none">
-                    <button onclick="addCategory()" class="w-full bg-indigo-600 py-3 rounded-xl">Add Category</button>
-                </div>
-                <!-- Add Test -->
-                <div class="glass p-6 rounded-3xl">
-                    <h3 class="font-bold mb-4">Upload Test Series</h3>
-                    <input id="test-thumb" type="text" placeholder="Image URL (Thumbnail)" class="w-full bg-white/5 p-3 rounded-xl mb-3">
-                    <input id="test-name" type="text" placeholder="Series Name" class="w-full bg-white/5 p-3 rounded-xl mb-3">
-                    <input id="test-price" type="number" placeholder="Price (INR)" class="w-full bg-white/5 p-3 rounded-xl mb-3">
-                    <select id="cat-select" class="w-full bg-white/10 p-3 rounded-xl mb-3"></select>
-                    <textarea id="test-json" placeholder='JSON Questions: [{"q":"2+2?","options":["3","4"],"ans":"4"}]' class="w-full bg-white/5 p-3 rounded-xl mb-3 h-32"></textarea>
-                    <button onclick="uploadTest()" class="w-full bg-green-600 py-3 rounded-xl font-bold">Publish Live</button>
-                </div>
-            </div>
-        </div>
+        <button onclick="showScreen('dashboard')" class="mb-6 text-indigo-400"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h2 id="currentName" class="text-3xl font-bold mb-8">--</h2>
+        <div id="tests-box" class="max-w-3xl mx-auto space-y-4"></div>
     </div>
 
     <script>
-        // 1. FIREBASE CONFIGURATION (Aapki Di hui detail)
         const firebaseConfig = {
             apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo",
             authDomain: "showpdf-ffa34.firebaseapp.com",
@@ -111,130 +71,79 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
+        let uid = "";
 
-        let currentUser = null;
-
-        // 2. GOOGLE LOGIN
         function googleLogin() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then((res) => {
-                currentUser = res.user;
-                setupUserUI();
-            }).catch(err => alert(err.message));
-        }
-
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                setupUserUI();
-            }
-        });
-
-        function setupUserUI() {
-            switchScreen('main-dashboard');
-            document.getElementById('user-photo').src = currentUser.photoURL;
-            // Admin Check (Aap apni email yaha daal sakte hain)
-            if(currentUser.email === "aapkiemail@gmail.com") {
-                document.getElementById('admin-btn').classList.remove('hidden');
-            }
-            loadData();
-        }
-
-        // 3. DATABASE FUNCTIONS (REAL-TIME)
-        function addCategory() {
-            const cat = document.getElementById('new-cat').value;
-            if(!cat) return;
-            db.ref('categories').push(cat);
-            document.getElementById('new-cat').value = "";
-            Swal.fire('Success', 'Category Added', 'success');
-        }
-
-        function uploadTest() {
-            const data = {
-                thumb: document.getElementById('test-thumb').value,
-                name: document.getElementById('test-name').value,
-                price: document.getElementById('test-price').value,
-                cat: document.getElementById('cat-select').value,
-                questions: document.getElementById('test-json').value
-            };
-            db.ref('testSeries').push(data);
-            Swal.fire('Live!', 'Series Published', 'success');
-        }
-
-        function loadData() {
-            // Load Categories
-            db.ref('categories').on('value', snap => {
-                const select = document.getElementById('cat-select');
-                select.innerHTML = "";
-                snap.forEach(child => {
-                    select.innerHTML += `<option>${child.val()}</option>`;
-                });
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(res => {
+                uid = res.user.uid;
+                document.getElementById('userImg').src = res.user.photoURL;
+                showScreen('dashboard');
+                loadSeries();
             });
+        }
 
-            // Load Test Series
+        function loadSeries() {
             db.ref('testSeries').on('value', snap => {
                 const container = document.getElementById('series-container');
                 container.innerHTML = "";
                 snap.forEach(child => {
-                    const item = child.val();
+                    const s = child.val();
                     container.innerHTML += `
-                        <div class="min-w-[300px] glass p-4 rounded-[2.5rem] test-card">
-                            <img src="${item.thumb}" class="w-full h-40 object-cover rounded-3xl mb-4">
-                            <h3 class="font-bold text-lg">${item.name}</h3>
-                            <div class="flex justify-between items-center mt-6">
-                                <span class="text-indigo-400 font-bold">₹${item.price}</span>
-                                <button onclick="handlePayment('${child.key}', ${item.price}, '${item.name}')" class="bg-indigo-600 px-6 py-2 rounded-2xl font-bold">Buy Now</button>
+                        <div class="min-w-[280px] glass p-4 rounded-[2rem] test-card">
+                            <img src="${s.image}" class="w-full h-36 object-cover rounded-2xl mb-4">
+                            <h4 class="font-bold">${s.title}</h4>
+                            <div class="flex justify-between items-center mt-4">
+                                <span class="text-indigo-400 font-bold">₹${s.price}</span>
+                                <button onclick="checkPurchase('${child.key}', ${s.price}, '${s.title}')" class="bg-indigo-600 px-4 py-2 rounded-xl text-xs font-bold">Buy Now</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             });
         }
 
-        // 4. RAZORPAY INTEGRATION
-        function handlePayment(id, amount, name) {
+        function checkPurchase(id, price, name) {
+            db.ref('users/' + uid + '/purchases/' + id).once('value', snap => {
+                if(snap.exists()) openTests(id, name);
+                else startPayment(id, price, name);
+            });
+        }
+
+        function startPayment(id, amount, name) {
             var options = {
-                "key": "rzp_test_RwizK12wU5cyN6", // Aapki API Key
+                "key": "rzp_test_RwizK12wU5cyN6",
                 "amount": amount * 100,
                 "currency": "INR",
-                "name": "TestPro Preparation",
-                "description": "Purchase " + name,
-                "handler": function (response){
-                    // Payment Success - Save to Firebase
-                    db.ref('users/' + currentUser.uid + '/purchases/' + id).set(true);
-                    Swal.fire('Success', 'Series Unlocked!', 'success');
-                    openSeries(id, name);
+                "name": "TestPro",
+                "description": name,
+                "handler": function (res){
+                    db.ref('users/' + uid + '/purchases/' + id).set(true);
+                    openTests(id, name);
                 },
                 "theme": { "color": "#6366f1" }
             };
-            var rzp1 = new Razorpay(options);
-            rzp1.open();
+            new Razorpay(options).open();
         }
 
-        function openSeries(id, name) {
-            document.getElementById('current-series-name').innerText = name;
-            switchScreen('test-list-screen');
-            // Mock test loading - Asliyat me questions JSON ko parse karke loops chalenge
-            const grid = document.getElementById('tests-grid');
-            grid.innerHTML = `
-                <div class="glass p-6 rounded-3xl flex justify-between items-center border-l-4 border-green-500">
-                    <div><h4 class="font-bold">Mock Test 01</h4><p class="text-xs">100 Marks | 60 Min</p></div>
-                    <button class="bg-green-600 px-6 py-2 rounded-full font-bold">Start</button>
+        function openTests(id, name) {
+            document.getElementById('currentName').innerText = name;
+            showScreen('test-list-screen');
+            const box = document.getElementById('tests-box');
+            // Logic for tests (Example structure)
+            box.innerHTML = `
+                <div class="glass p-6 rounded-3xl flex justify-between items-center border-l-4 border-indigo-500">
+                    <div><h4 class="font-bold text-lg">Mock Test 01</h4><p class="text-xs text-gray-400">100 Marks</p></div>
+                    <button class="bg-indigo-600 px-6 py-2 rounded-full font-bold">Start</button>
                 </div>
-                <div class="glass p-6 rounded-3xl flex justify-between items-center opacity-50 locked">
-                    <div><h4 class="font-bold">Mock Test 02</h4><p class="text-xs">Unlocks after Test 01</p></div>
+                <div class="glass p-6 rounded-3xl flex justify-between items-center opacity-40 locked">
+                    <div><h4 class="font-bold text-lg">Mock Test 02</h4><p class="text-xs text-gray-400">Locked</p></div>
                     <i class="fa-solid fa-lock"></i>
-                </div>
-            `;
+                </div>`;
         }
 
-        // Helper Functions
-        function switchScreen(id) {
+        function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById(id).classList.add('active-screen');
-            if(id === 'admin-panel') document.getElementById('admin-panel').style.display = 'block';
         }
-        function showAdmin() { switchScreen('admin-panel'); }
     </script>
 </body>
 </html>

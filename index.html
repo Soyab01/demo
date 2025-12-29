@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal | ExamPro</title>
     
-    <!-- CSS & UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- FIREBASE COMPAT SDK (Most Stable) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -23,60 +21,59 @@
         .active-screen { display: flex !important; flex-direction: column; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-in { animation: fadeIn 0.5s ease; }
+        .animate-in { animation: fadeIn 0.4s ease; }
     </style>
 </head>
 <body>
 
-    <!-- 1. LOADING SCREEN (Login check hote waqt dikhega) -->
-    <div id="scr-loading" class="screen active-screen items-center justify-center">
-        <div class="text-center">
-            <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-slate-400">Verifying Session...</p>
-        </div>
-    </div>
-
-    <!-- 2. LOGIN SCREEN -->
-    <div id="scr-login" class="screen items-center justify-center p-6">
-        <div class="glass p-10 rounded-[2.5rem] text-center w-full max-w-sm shadow-2xl border-t-4 border-indigo-600 animate-in">
-            <h1 class="text-4xl font-black mb-2 italic tracking-tighter text-indigo-500">EXAMPRO</h1>
-            <p class="text-slate-400 mb-8 text-sm">Please login to continue</p>
-            
-            <button onclick="login()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition shadow-xl">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
-                Continue with Google
+    <!-- 1. LOGIN SCREEN -->
+    <div id="scr-login" class="screen active-screen items-center justify-center p-6 text-center">
+        <div class="glass p-10 rounded-[3rem] w-full max-w-sm shadow-2xl border-t-4 border-indigo-600">
+            <h1 class="text-4xl font-black mb-2 italic text-indigo-500">EXAMPRO</h1>
+            <p class="text-slate-400 mb-8">Login with Google to continue</p>
+            <button onclick="login()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22"> Sign in with Google
             </button>
         </div>
     </div>
 
-    <!-- 3. DASHBOARD SCREEN -->
+    <!-- 2. DASHBOARD SCREEN -->
     <div id="scr-dash" class="screen animate-in">
         <nav class="p-4 glass sticky top-0 z-50 flex justify-between items-center px-6">
             <h2 class="text-xl font-bold italic text-indigo-500">EXAMPRO</h2>
-            <div class="flex items-center gap-4">
-                <img id="u-img" class="w-10 h-10 rounded-full border-2 border-indigo-500 shadow-md">
-                <button onclick="logout()" class="text-slate-400"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
+            <img id="u-img" class="w-10 h-10 rounded-full border-2 border-indigo-500 shadow-md">
         </nav>
-
-        <main class="p-6 space-y-10" id="dash-data">
-            <!-- Test Series Category Wise Load Hongi -->
-        </main>
+        <main class="p-6 space-y-10" id="dash-data"></main>
     </div>
 
-    <!-- 4. TESTS LIST SCREEN -->
+    <!-- 3. TESTS LIST SCREEN -->
     <div id="scr-tests" class="screen p-6 animate-in">
-        <button onclick="showScreen('scr-dash')" class="mb-6 text-indigo-400 font-bold flex items-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Dashboard
-        </button>
-        <div class="max-w-3xl mx-auto">
-            <h1 id="s-title" class="text-3xl font-black mb-8">--</h1>
+        <button onclick="showScreen('scr-dash')" class="mb-6 text-indigo-400 font-bold flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 id="s-title" class="text-3xl font-black mb-12">--</h1>
             <div id="test-list-box" class="space-y-4"></div>
         </div>
     </div>
 
+    <!-- 4. EXAM INTERFACE SCREEN (Fix: Start button ab yaha le jayega) -->
+    <div id="scr-exam" class="screen fixed inset-0 bg-[#020617] z-[100] animate-in flex-col">
+        <header class="h-16 glass flex justify-between items-center px-6 border-b border-white/10">
+            <span id="exam-timer" class="text-red-500 font-bold text-xl font-mono">00:00</span>
+            <button onclick="submitExam()" class="bg-green-600 px-6 py-1 rounded-lg font-bold">SUBMIT</button>
+        </header>
+        <main class="flex-1 p-6 md:p-12 overflow-y-auto">
+            <div class="max-w-2xl mx-auto glass p-8 rounded-[2rem]">
+                <p id="q-text" class="text-xl font-medium mb-8">Loading question...</p>
+                <div id="opt-box" class="grid gap-3"></div>
+            </div>
+            <div class="max-w-2xl mx-auto flex justify-between mt-8">
+                <button onclick="prevQ()" class="px-6 py-2 glass rounded-xl font-bold">Prev</button>
+                <button onclick="nextQ()" class="px-6 py-2 bg-indigo-600 rounded-xl font-bold">Next</button>
+            </div>
+        </main>
+    </div>
+
     <script>
-        // --- FIREBASE SETUP ---
         const firebaseConfig = {
             apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo",
             authDomain: "showpdf-ffa34.firebaseapp.com",
@@ -91,119 +88,141 @@
         const db = firebase.database();
         let userUID = "";
 
-        // --- AUTH LOGIC (STABLE REDIRECT) ---
-        function login() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider);
-        }
+        function login() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
+        function logout() { auth.signOut().then(() => location.reload()); }
 
-        function logout() {
-            auth.signOut().then(() => location.reload());
-        }
-
-        // Ye function check karega ki user logged in hai ya nahi
         auth.onAuthStateChanged(user => {
             if (user) {
                 userUID = user.uid;
                 document.getElementById('u-img').src = user.photoURL;
                 showScreen('scr-dash');
                 loadDashboard();
-            } else {
-                showScreen('scr-login');
-            }
+            } else { showScreen('scr-login'); }
         });
 
-        // --- DASHBOARD LOADING ---
         function loadDashboard() {
             db.ref('testSeries').on('value', snap => {
                 const dash = document.getElementById('dash-data');
                 dash.innerHTML = "";
                 const data = snap.val();
-                if(!data) { 
-                    dash.innerHTML = "<p class='text-center py-20 text-slate-500'>No Tests Available.</p>"; 
-                    return; 
-                }
+                if(!data) return;
 
-                const cats = {};
-                Object.keys(data).forEach(k => {
-                    const s = data[k];
-                    if(!cats[s.cat]) cats[s.cat] = [];
-                    cats[s.cat].push({id: k, ...s});
-                });
-
-                Object.keys(cats).forEach(c => {
-                    let html = `<div class="space-y-4">
-                        <h3 class="text-xl font-bold border-l-4 border-indigo-500 pl-3 uppercase">${c}</h3>
-                        <div class="flex overflow-x-auto gap-4 pb-4 no-scrollbar">`;
-                    
-                    cats[c].forEach(item => {
-                        html += `
-                        <div class="min-w-[260px] glass p-4 rounded-[2.5rem] border border-white/5 shadow-xl">
-                            <img src="${item.image}" class="w-full h-36 object-cover rounded-3xl mb-4">
-                            <h4 class="font-bold mb-4 line-clamp-1">${item.title}</h4>
-                            <div class="flex justify-between items-center mt-6">
-                                <span class="text-indigo-400 font-bold text-xl">₹${item.price}</span>
-                                <button id="btn-${item.id}" onclick="checkBuy('${item.id}', ${item.price}, '${item.title}')" class="bg-indigo-600 px-6 py-2 rounded-2xl font-bold text-xs uppercase">Unlock</button>
+                Object.keys(data).forEach(id => {
+                    const s = data[id];
+                    // Check Purchase status for Button & Price UI
+                    db.ref(`users/${userUID}/purchases/${id}`).on('value', pSnap => {
+                        const purchased = pSnap.exists();
+                        const cardId = `card-${id}`;
+                        
+                        let cardHtml = `
+                        <div id="${cardId}" class="glass p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl mb-6">
+                            <img src="${s.image}" class="w-full h-44 object-cover rounded-[2rem] mb-4">
+                            <h4 class="font-bold text-xl mb-4">${s.title}</h4>
+                            <div class="flex items-center gap-4">
+                                ${purchased ? '' : `<span class="text-indigo-400 font-black text-xl">₹${s.price}</span>`}
+                                <button onclick="handleAction('${id}', ${s.price}, '${s.title}')" class="bg-indigo-600 px-8 py-2 rounded-2xl font-bold text-sm uppercase">
+                                    ${purchased ? 'START' : 'BUY NOW'}
+                                </button>
                             </div>
                         </div>`;
-                        // Real-time button text update
-                        db.ref(`users/${userUID}/purchases/${item.id}`).once('value', s => {
-                            const b = document.getElementById(`btn-${item.id}`);
-                            if(b && s.exists()) b.innerText = "START";
-                        });
+                        
+                        const existingCard = document.getElementById(cardId);
+                        if(existingCard) existingCard.outerHTML = cardHtml;
+                        else dash.innerHTML += cardHtml;
                     });
-                    html += `</div></div>`;
-                    dash.innerHTML += html;
                 });
             });
         }
 
-        // --- PAYMENT & ACCESS ---
-        function checkBuy(id, price, name) {
+        function handleAction(id, price, name) {
             db.ref(`users/${userUID}/purchases/${id}`).once('value', s => {
-                if(s.exists()) openTests(id, name);
-                else startPayment(id, price, name);
+                if(s.exists()) openTestList(id, name);
+                else startPay(id, price, name);
             });
         }
 
-        function startPayment(id, amt, name) {
+        function startPay(id, amt, name) {
             var opt = {
                 "key": "rzp_test_RwizK12wU5cyN6",
                 "amount": amt * 100,
                 "name": "ExamPro",
                 "handler": function(res) {
                     db.ref(`users/${userUID}/purchases/${id}`).set(true);
-                    Swal.fire('Success', 'Unlocked!', 'success');
-                    openTests(id, name);
-                },
-                "theme": { "color": "#6366f1" }
+                    Swal.fire('Paid!', 'Series Unlocked', 'success');
+                }
             };
             new Razorpay(opt).open();
         }
 
-        function openTests(id, name) {
+        function openTestList(id, name) {
             showScreen('scr-tests');
             document.getElementById('s-title').innerText = name;
             db.ref('testSeries/'+id).once('value', s => {
                 const box = document.getElementById('test-list-box');
                 box.innerHTML = "";
-                try {
-                    const tests = JSON.parse(s.val().questions || "[]");
-                    tests.forEach((t, i) => {
-                        box.innerHTML += `<div class="glass p-5 rounded-3xl flex justify-between items-center border-l-4 border-indigo-500">
-                            <div><h4 class="font-bold text-sm uppercase">Mock Test ${i+1}</h4><p class="text-[10px] text-slate-500">${t.length} Questions</p></div>
-                            <button class="bg-indigo-600 px-6 py-2 rounded-full font-bold text-[10px]">START</button>
-                        </div>`;
-                    });
-                } catch(e) { box.innerHTML = "Error loading tests."; }
+                const tests = JSON.parse(s.val().questions || "[]");
+                tests.forEach((t, i) => {
+                    box.innerHTML += `
+                    <div class="glass p-5 rounded-3xl border-2 border-white/5 flex justify-between items-center hover:border-indigo-500 transition">
+                        <div class="text-left">
+                            <h4 class="font-bold text-indigo-400">MOCK TEST ${i+1}</h4>
+                            <p class="text-xs text-slate-500">${t.length} Questions</p>
+                        </div>
+                        <button onclick='startExam(${JSON.stringify(t)})' class="bg-indigo-600 px-6 py-2 rounded-full font-bold text-xs">START</button>
+                    </div>`;
+                });
             });
         }
 
-        // --- UI HELPERS ---
+        // --- EXAM LOGIC ---
+        let currentQs = [];
+        let qIdx = 0;
+        let timer;
+
+        function startExam(questions) {
+            if(!questions || questions.length === 0) return alert("No questions in this test");
+            currentQs = questions;
+            qIdx = 0;
+            showScreen('scr-exam');
+            renderQ();
+            startTimer(3600); // 60 mins
+        }
+
+        function renderQ() {
+            const q = currentQs[qIdx];
+            document.getElementById('q-text').innerText = `${qIdx + 1}. ${q.q}`;
+            const box = document.getElementById('opt-box');
+            box.innerHTML = "";
+            q.options.forEach(opt => {
+                box.innerHTML += `
+                <button onclick="nextQ()" class="w-full text-left p-4 glass rounded-xl hover:bg-white/10 border border-white/5">${opt}</button>
+                `;
+            });
+        }
+
+        function nextQ() { if(qIdx < currentQs.length - 1) { qIdx++; renderQ(); } else { submitExam(); } }
+        function prevQ() { if(qIdx > 0) { qIdx--; renderQ(); } }
+
+        function startTimer(sec) {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                sec--;
+                let m = Math.floor(sec/60), s = sec%60;
+                document.getElementById('exam-timer').innerText = `${m}:${s<10?'0':''}${s}`;
+                if(sec <= 0) submitExam();
+            }, 1000);
+        }
+
+        function submitExam() {
+            clearInterval(timer);
+            Swal.fire('Test Submitted!', 'Your result is being processed.', 'success').then(() => {
+                showScreen('scr-tests');
+            });
+        }
+
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById(id).classList.add('active-screen');
-            window.scrollTo(0,0);
         }
     </script>
 </body>

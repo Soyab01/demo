@@ -4,65 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal | ExamPro</title>
+    
+    <!-- CSS & Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDK (Compat Mode) - Sabse Stable version single file ke liye -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
     <style>
-        body { background: #020617; color: white; font-family: sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background: #020617; color: white; font-family: 'Inter', sans-serif; }
         .screen { display: none; min-height: 100vh; }
-        .active-screen { display: block !important; }
+        .active-screen { display: flex !important; flex-direction: column; animation: fadeIn 0.4s ease; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .test-card:hover { transform: translateY(-5px); border-color: #6366f1; transition: 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
-    <div id="scr-login" class="screen active-screen flex items-center justify-center p-6">
-        <div class="glass p-10 rounded-[3rem] text-center w-full max-w-sm shadow-2xl border-t-4 border-indigo-500">
-            <h1 class="text-4xl font-black mb-2 italic text-indigo-500">EXAMPRO</h1>
-            <p class="text-slate-400 mb-8 text-sm">Sign in with Google to continue</p>
-            <button onclick="login()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-200 transition">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20"> Sign in with Google
+    <!-- 1. LOGIN SCREEN -->
+    <div id="scr-login" class="screen active-screen items-center justify-center p-6">
+        <div class="glass p-10 rounded-[3rem] text-center w-full max-w-sm shadow-2xl border-t-4 border-indigo-600">
+            <h1 class="text-4xl font-black mb-2 italic tracking-tighter text-indigo-500">EXAMPRO</h1>
+            <p class="text-slate-400 mb-8 text-sm">Ache se login karein aur test shuru karein</p>
+            
+            <button onclick="loginWithGoogle()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition shadow-xl">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
+                Sign in with Google
             </button>
+            <p id="auth-status" class="mt-4 text-xs text-slate-500"></p>
         </div>
     </div>
 
-    <!-- DASHBOARD SCREEN -->
+    <!-- 2. DASHBOARD SCREEN -->
     <div id="scr-dash" class="screen">
         <nav class="p-5 glass sticky top-0 z-50 flex justify-between items-center px-6 lg:px-12">
-            <h2 class="text-xl font-bold italic text-indigo-500">EXAMPRO</h2>
+            <h2 class="text-xl font-bold italic tracking-tighter text-indigo-500">EXAMPRO</h2>
             <div class="flex items-center gap-4">
-                <img id="u-img" class="w-10 h-10 rounded-full border-2 border-indigo-500 shadow-md" src="">
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-power-off"></i></button>
+                <img id="u-img" class="w-10 h-10 rounded-full border-2 border-indigo-500 shadow-md">
+                <button onclick="logout()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </nav>
 
-        <main class="p-6 lg:p-12 space-y-12" id="dash-content">
-            <p class="text-center text-slate-500 py-20">Loading tests...</p>
+        <main class="p-6 lg:p-12 space-y-12" id="dash-data-box">
+            <div class="text-center py-20 text-slate-500">Test Series ki janch ho rahi hai...</div>
         </main>
     </div>
 
-    <!-- TEST LIST SCREEN -->
+    <!-- 3. TEST LIST SCREEN -->
     <div id="scr-tests" class="screen p-6 lg:p-12">
         <button onclick="showScreen('scr-dash')" class="mb-8 text-indigo-400 font-bold flex items-center gap-2">
-            <i class="fa-solid fa-arrow-left"></i> Dashboard
+            <i class="fa-solid fa-circle-left text-2xl"></i> Dashboard par wapas jayein
         </button>
         <div class="max-w-4xl mx-auto">
-            <h1 id="s-title" class="text-3xl font-black mb-10 tracking-tight">--</h1>
-            <div id="test-list-box" class="space-y-4"></div>
+            <h1 id="s-name-head" class="text-4xl font-black mb-10 tracking-tight">--</h1>
+            <div id="test-items-box" class="space-y-4"></div>
         </div>
     </div>
 
     <script>
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo",
             authDomain: "showpdf-ffa34.firebaseapp.com",
@@ -72,19 +78,25 @@
             messagingSenderId: "943291456891",
             appId: "1:943291456891:web:b96e20acd76bd3463b71de"
         };
+
+        // Firebase Initialize
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        let userUID = "";
+        let userUID = null;
 
-        // LOGIN WITH REFRESH FIX
-        function login() {
+        // --- LOGIN FUNCTION (FIXED) ---
+        function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
+            document.getElementById('auth-status').innerText = "Connecting to Google...";
+
             auth.signInWithPopup(provider).then((result) => {
-                // Manually trigger UI if observer is slow
-                handleUser(result.user);
-            }).catch(e => {
-                Swal.fire('Error', e.message, 'error');
+                console.log("Login Success!");
+                // state change apne aap dashboard par le jayega
+            }).catch((error) => {
+                console.error("Login Error:", error.message);
+                Swal.fire('Login Error', 'Gmail window band ho gayi ya error aaya.', 'error');
+                document.getElementById('auth-status').innerText = "";
             });
         }
 
@@ -92,102 +104,126 @@
             auth.signOut().then(() => location.reload());
         }
 
-        // AUTH OBSERVER
-        auth.onAuthStateChanged(user => {
+        // --- AUTH OBSERVER (REAL-TIME CHECK) ---
+        auth.onAuthStateChanged((user) => {
             if (user) {
-                handleUser(user);
+                userUID = user.uid;
+                document.getElementById('u-img').src = user.photoURL;
+                showScreen('scr-dash');
+                loadSeriesFromFirebase();
             } else {
                 showScreen('scr-login');
             }
         });
 
-        function handleUser(user) {
-            userUID = user.uid;
-            document.getElementById('u-img').src = user.photoURL;
-            showScreen('scr-dash');
-            loadDashboard();
-        }
-
-        function loadDashboard() {
-            db.ref('testSeries').on('value', snap => {
-                const dash = document.getElementById('dash-content');
-                dash.innerHTML = "";
+        // --- DASHBOARD DATA LOADING ---
+        function loadSeriesFromFirebase() {
+            db.ref('testSeries').on('value', (snap) => {
+                const box = document.getElementById('dash-data-box');
+                box.innerHTML = "";
                 const data = snap.val();
-                if(!data) { dash.innerHTML = "<p class='text-center text-slate-600 py-10'>No Series Found.</p>"; return; }
 
-                const cats = {};
-                Object.keys(data).forEach(k => {
-                    const s = data[k];
-                    if(!cats[s.cat]) cats[s.cat] = [];
-                    cats[s.cat].push({id: k, ...s});
+                if(!data) {
+                    box.innerHTML = "<p class='text-center py-20 text-slate-500'>Abhi koi test upload nahi hua hai.</p>";
+                    return;
+                }
+
+                // Sorting into categories
+                const categories = {};
+                Object.keys(data).forEach(id => {
+                    const item = data[id];
+                    if(!categories[item.cat]) categories[item.cat] = [];
+                    categories[item.cat].push({ id, ...item });
                 });
 
-                Object.keys(cats).forEach(c => {
-                    let html = `<div class="space-y-6">
-                        <h3 class="text-xl font-bold border-l-4 border-indigo-500 pl-4 uppercase">${c}</h3>
-                        <div class="flex overflow-x-auto gap-6 pb-4 no-scrollbar">`;
-                    cats[c].forEach(item => {
-                        html += `
-                        <div class="min-w-[260px] max-w-[260px] glass p-4 rounded-[2rem] test-card border border-white/5 shadow-xl">
-                            <img src="${item.image}" class="w-full h-36 object-cover rounded-2xl mb-4">
-                            <h4 class="font-bold text-md leading-tight mb-2 line-clamp-1">${item.title}</h4>
-                            <div class="flex justify-between items-center mt-4">
-                                <span class="text-indigo-400 font-bold">₹${item.price}</span>
-                                <button onclick="checkBuy('${item.id}', ${item.price}, '${item.title}')" class="bg-indigo-600 px-5 py-2 rounded-xl font-bold text-xs uppercase">Unlock</button>
+                Object.keys(categories).forEach(catName => {
+                    let sectionHtml = `
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold border-l-4 border-indigo-500 pl-4 uppercase tracking-tighter">${catName}</h3>
+                        <div class="flex overflow-x-auto gap-6 pb-6 no-scrollbar">`;
+
+                    categories[catName].forEach(series => {
+                        sectionHtml += `
+                        <div class="min-w-[280px] max-w-[280px] glass p-4 rounded-[2.5rem] border border-white/5 transition hover:border-indigo-500 shadow-xl">
+                            <img src="${series.image}" class="w-full h-40 object-cover rounded-3xl mb-4 shadow-lg">
+                            <h4 class="font-bold text-lg mb-4 line-clamp-1">${series.title}</h4>
+                            <div class="flex justify-between items-center mt-6">
+                                <span class="text-indigo-400 font-bold text-xl">₹${series.price}</span>
+                                <button onclick="handleUnlock('${series.id}', ${series.price}, '${series.title}')" class="bg-indigo-600 px-6 py-2 rounded-2xl font-bold text-xs uppercase shadow-lg shadow-indigo-600/30">Unlock</button>
                             </div>
                         </div>`;
                     });
-                    html += `</div></div>`;
-                    dash.innerHTML += html;
+
+                    sectionHtml += `</div></div>`;
+                    box.innerHTML += sectionHtml;
                 });
             });
         }
 
-        function checkBuy(id, price, name) {
-            db.ref(`users/${userUID}/purchases/${id}`).once('value', s => {
-                if(s.exists()) openTests(id, name);
-                else startPay(id, price, name);
-            });
-        }
-
-        function startPay(id, amt, name) {
-            var opt = {
-                "key": "rzp_test_RwizK12wU5cyN6",
-                "amount": amt * 100,
-                "name": "ExamPro",
-                "handler": function(res) {
-                    db.ref(`users/${userUID}/purchases/${id}`).set(true);
-                    Swal.fire('Unlocked!', 'Ready to start.', 'success');
-                    openTests(id, name);
+        // --- PAYMENT & SERIES ACCESS ---
+        function handleUnlock(id, price, name) {
+            db.ref(`users/${userUID}/purchases/${id}`).once('value', (snap) => {
+                if (snap.exists()) {
+                    openTestListScreen(id, name);
+                } else {
+                    processRazorpay(id, price, name);
                 }
-            };
-            new Razorpay(opt).open();
-        }
-
-        function openTests(id, name) {
-            showScreen('scr-tests');
-            document.getElementById('s-title').innerText = name;
-            db.ref('testSeries/' + id).once('value', s => {
-                const box = document.getElementById('test-list-box');
-                box.innerHTML = "";
-                const qs = JSON.parse(s.val().questions || "[]");
-                qs.forEach((q, i) => {
-                    const locked = i > 0;
-                    box.innerHTML += `
-                    <div class="glass p-5 rounded-3xl flex justify-between items-center ${locked ? 'opacity-40' : 'border-l-4 border-indigo-500'}">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center font-bold text-sm">${i+1}</div>
-                            <div><h4 class="font-bold text-sm">Mock Test ${i+1}</h4><p class="text-[10px] text-slate-500 uppercase">100 Marks • 60 Mins</p></div>
-                        </div>
-                        ${locked ? '<i class="fa-solid fa-lock text-slate-500"></i>' : '<button class="bg-indigo-600 px-5 py-2 rounded-full font-bold text-[10px]">START</button>'}
-                    </div>`;
-                });
             });
         }
 
-        function showScreen(id) {
+        function processRazorpay(id, amount, name) {
+            const options = {
+                "key": "rzp_test_RwizK12wU5cyN6",
+                "amount": amount * 100,
+                "currency": "INR",
+                "name": "ExamPro Portal",
+                "description": name,
+                "handler": function (response) {
+                    db.ref(`users/${userUID}/purchases/${id}`).set(true);
+                    Swal.fire('Success!', 'Series ab unlock ho gayi hai.', 'success');
+                    openTestListScreen(id, name);
+                },
+                "theme": { "color": "#6366f1" }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        }
+
+        function openTestListScreen(id, name) {
+            showScreen('scr-tests');
+            document.getElementById('s-name-head').innerText = name;
+            
+            db.ref('testSeries/' + id).once('value', (snap) => {
+                const list = document.getElementById('test-items-box');
+                list.innerHTML = "";
+                const seriesData = snap.val();
+                
+                try {
+                    const questions = JSON.parse(seriesData.questions || "[]");
+                    questions.forEach((q, index) => {
+                        const isLocked = index > 0; // Pehla unlock, baaki lock
+                        list.innerHTML += `
+                        <div class="glass p-6 rounded-3xl flex justify-between items-center ${isLocked ? 'opacity-40 cursor-not-allowed' : 'border-l-4 border-indigo-500'}">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg">${index + 1}</div>
+                                <div>
+                                    <h4 class="font-bold">Mock Test #${index + 1}</h4>
+                                    <p class="text-xs text-slate-500 uppercase">100 Marks • 60 Mins</p>
+                                </div>
+                            </div>
+                            ${isLocked ? '<i class="fa-solid fa-lock text-slate-500"></i>' : '<button class="bg-indigo-600 px-6 py-2 rounded-full font-bold text-xs">START NOW</button>'}
+                        </div>`;
+                    });
+                } catch (e) {
+                    list.innerHTML = "<p class='text-red-400'>Error loading tests. JSON format check karein.</p>";
+                }
+            });
+        }
+
+        // --- NAVIGATION HELPER ---
+        function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
+            document.getElementById(screenId).classList.add('active-screen');
             window.scrollTo(0,0);
         }
     </script>

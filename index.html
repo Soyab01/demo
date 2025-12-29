@@ -22,6 +22,8 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-in { animation: fadeIn 0.4s ease; }
+        .opt-btn { text-align: left; padding: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; transition: 0.2s; }
+        .opt-btn:hover { background: rgba(99, 102, 241, 0.2); border-color: #6366f1; }
     </style>
 </head>
 <body>
@@ -30,7 +32,7 @@
     <div id="scr-login" class="screen active-screen items-center justify-center p-6 text-center">
         <div class="glass p-10 rounded-[3rem] w-full max-w-sm shadow-2xl border-t-4 border-indigo-600">
             <h1 class="text-4xl font-black mb-2 italic text-indigo-500">EXAMPRO</h1>
-            <p class="text-slate-400 mb-8">Login with Google to continue</p>
+            <p class="text-slate-400 mb-8 text-sm">Aapka safar kamyabi ki taraf</p>
             <button onclick="login()" class="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22"> Sign in with Google
             </button>
@@ -46,29 +48,34 @@
         <main class="p-6 space-y-10" id="dash-data"></main>
     </div>
 
-    <!-- 3. TESTS LIST SCREEN -->
+    <!-- 3. TESTS LIST SCREEN (Fixed Navigation) -->
     <div id="scr-tests" class="screen p-6 animate-in">
-        <button onclick="showScreen('scr-dash')" class="mb-6 text-indigo-400 font-bold flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Dashboard</button>
+        <button onclick="showScreen('scr-dash')" class="mb-6 text-indigo-400 font-bold flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Wapas Jayein</button>
         <div class="max-w-3xl mx-auto text-center">
-            <h1 id="s-title" class="text-3xl font-black mb-12">--</h1>
+            <h1 id="s-title" class="text-3xl font-black mb-12 uppercase tracking-tighter">--</h1>
             <div id="test-list-box" class="space-y-4"></div>
         </div>
     </div>
 
-    <!-- 4. EXAM INTERFACE SCREEN (Fix: Start button ab yaha le jayega) -->
+    <!-- 4. ACTUAL EXAM INTERFACE (Ab ye open hoga) -->
     <div id="scr-exam" class="screen fixed inset-0 bg-[#020617] z-[100] animate-in flex-col">
         <header class="h-16 glass flex justify-between items-center px-6 border-b border-white/10">
-            <span id="exam-timer" class="text-red-500 font-bold text-xl font-mono">00:00</span>
-            <button onclick="submitExam()" class="bg-green-600 px-6 py-1 rounded-lg font-bold">SUBMIT</button>
-        </header>
-        <main class="flex-1 p-6 md:p-12 overflow-y-auto">
-            <div class="max-w-2xl mx-auto glass p-8 rounded-[2rem]">
-                <p id="q-text" class="text-xl font-medium mb-8">Loading question...</p>
-                <div id="opt-box" class="grid gap-3"></div>
+            <div class="flex items-center gap-4">
+                <span id="exam-timer" class="text-red-500 font-bold text-xl font-mono">60:00</span>
             </div>
-            <div class="max-w-2xl mx-auto flex justify-between mt-8">
-                <button onclick="prevQ()" class="px-6 py-2 glass rounded-xl font-bold">Prev</button>
-                <button onclick="nextQ()" class="px-6 py-2 bg-indigo-600 rounded-xl font-bold">Next</button>
+            <button onclick="finishExam()" class="bg-green-600 px-6 py-1 rounded-lg font-bold text-sm">SUBMIT</button>
+        </header>
+        <main class="flex-1 p-6 md:p-12 overflow-y-auto bg-[#030712]">
+            <div class="max-w-2xl mx-auto">
+                <div class="glass p-8 rounded-[2rem] border-l-4 border-indigo-500 shadow-2xl">
+                    <p id="q-num" class="text-indigo-500 font-bold mb-2 text-sm uppercase">Sawal 1</p>
+                    <p id="q-text" class="text-xl font-medium mb-10">Sawal load ho raha hai...</p>
+                    <div id="opt-box" class="grid gap-4"></div>
+                </div>
+                <div class="flex justify-between mt-10">
+                    <button onclick="prevQ()" class="px-8 py-3 glass rounded-2xl font-bold">Piche</button>
+                    <button onclick="nextQ()" class="px-8 py-3 bg-indigo-600 rounded-2xl font-bold">Agla Sawal</button>
+                </div>
             </div>
         </main>
     </div>
@@ -87,9 +94,12 @@
         const auth = firebase.auth();
         const db = firebase.database();
         let userUID = "";
+        let activeTestsData = []; // Global store for tests
+        let currentExamQs = [];
+        let qIdx = 0;
+        let timer;
 
         function login() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
-        function logout() { auth.signOut().then(() => location.reload()); }
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -109,13 +119,12 @@
 
                 Object.keys(data).forEach(id => {
                     const s = data[id];
-                    // Check Purchase status for Button & Price UI
                     db.ref(`users/${userUID}/purchases/${id}`).on('value', pSnap => {
                         const purchased = pSnap.exists();
                         const cardId = `card-${id}`;
                         
                         let cardHtml = `
-                        <div id="${cardId}" class="glass p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl mb-6">
+                        <div id="${cardId}" class="glass p-5 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl mb-6 border border-white/5">
                             <img src="${s.image}" class="w-full h-44 object-cover rounded-[2rem] mb-4">
                             <h4 class="font-bold text-xl mb-4">${s.title}</h4>
                             <div class="flex items-center gap-4">
@@ -126,8 +135,8 @@
                             </div>
                         </div>`;
                         
-                        const existingCard = document.getElementById(cardId);
-                        if(existingCard) existingCard.outerHTML = cardHtml;
+                        const existing = document.getElementById(cardId);
+                        if(existing) existing.outerHTML = cardHtml;
                         else dash.innerHTML += cardHtml;
                     });
                 });
@@ -148,7 +157,7 @@
                 "name": "ExamPro",
                 "handler": function(res) {
                     db.ref(`users/${userUID}/purchases/${id}`).set(true);
-                    Swal.fire('Paid!', 'Series Unlocked', 'success');
+                    Swal.fire('Paid!', 'Series Unlock ho gayi', 'success');
                 }
             };
             new Razorpay(opt).open();
@@ -160,62 +169,65 @@
             db.ref('testSeries/'+id).once('value', s => {
                 const box = document.getElementById('test-list-box');
                 box.innerHTML = "";
-                const tests = JSON.parse(s.val().questions || "[]");
-                tests.forEach((t, i) => {
+                activeTestsData = JSON.parse(s.val().questions || "[]");
+                
+                activeTestsData.forEach((t, i) => {
                     box.innerHTML += `
                     <div class="glass p-5 rounded-3xl border-2 border-white/5 flex justify-between items-center hover:border-indigo-500 transition">
                         <div class="text-left">
-                            <h4 class="font-bold text-indigo-400">MOCK TEST ${i+1}</h4>
-                            <p class="text-xs text-slate-500">${t.length} Questions</p>
+                            <h4 class="font-bold text-indigo-400 uppercase">MOCK TEST ${i+1}</h4>
+                            <p class="text-xs text-slate-500">${t.length} Sawaal</p>
                         </div>
-                        <button onclick='startExam(${JSON.stringify(t)})' class="bg-indigo-600 px-6 py-2 rounded-full font-bold text-xs">START</button>
+                        <button onclick="startExamNow(${i})" class="bg-indigo-600 px-8 py-2 rounded-full font-bold text-xs">START</button>
                     </div>`;
                 });
             });
         }
 
-        // --- EXAM LOGIC ---
-        let currentQs = [];
-        let qIdx = 0;
-        let timer;
-
-        function startExam(questions) {
-            if(!questions || questions.length === 0) return alert("No questions in this test");
-            currentQs = questions;
+        // --- EXAM ENGINE (FIXED) ---
+        function startExamNow(index) {
+            const questions = activeTestsData[index];
+            if(!questions || questions.length === 0) return Swal.fire('Error', 'Sawal nahi mile', 'error');
+            
+            currentExamQs = questions;
             qIdx = 0;
             showScreen('scr-exam');
-            renderQ();
-            startTimer(3600); // 60 mins
+            renderQuestion();
+            startCountdown(3600); // 60 mins
         }
 
-        function renderQ() {
-            const q = currentQs[qIdx];
-            document.getElementById('q-text').innerText = `${qIdx + 1}. ${q.q}`;
+        function renderQuestion() {
+            const q = currentExamQs[qIdx];
+            document.getElementById('q-num').innerText = `Sawal ${qIdx + 1} of ${currentExamQs.length}`;
+            document.getElementById('q-text').innerText = q.q;
             const box = document.getElementById('opt-box');
             box.innerHTML = "";
             q.options.forEach(opt => {
-                box.innerHTML += `
-                <button onclick="nextQ()" class="w-full text-left p-4 glass rounded-xl hover:bg-white/10 border border-white/5">${opt}</button>
-                `;
+                box.innerHTML += `<button onclick="nextQ()" class="opt-btn">${opt}</button>`;
             });
         }
 
-        function nextQ() { if(qIdx < currentQs.length - 1) { qIdx++; renderQ(); } else { submitExam(); } }
-        function prevQ() { if(qIdx > 0) { qIdx--; renderQ(); } }
+        function nextQ() { 
+            if(qIdx < currentExamQs.length - 1) { qIdx++; renderQuestion(); } 
+            else { finishExam(); } 
+        }
+        function prevQ() { 
+            if(qIdx > 0) { qIdx--; renderQuestion(); } 
+        }
 
-        function startTimer(sec) {
+        function startCountdown(sec) {
             clearInterval(timer);
             timer = setInterval(() => {
                 sec--;
                 let m = Math.floor(sec/60), s = sec%60;
                 document.getElementById('exam-timer').innerText = `${m}:${s<10?'0':''}${s}`;
-                if(sec <= 0) submitExam();
+                if(sec <= 0) finishExam();
             }, 1000);
         }
 
-        function submitExam() {
+        function finishExam() {
             clearInterval(timer);
-            Swal.fire('Test Submitted!', 'Your result is being processed.', 'success').then(() => {
+            Swal.fire('Test Khatam!', 'Aapka result save ho gaya hai.', 'success').then(() => {
                 showScreen('scr-tests');
             });
         }
@@ -223,6 +235,7 @@
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById(id).classList.add('active-screen');
+            window.scrollTo(0,0);
         }
     </script>
 </body>

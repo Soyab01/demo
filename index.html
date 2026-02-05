@@ -1,338 +1,259 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Manoj Nehra | Official Hub</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | ExamPro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #6366f1; --glass: rgba(255, 255, 255, 0.08); --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%); }
-        body { background: var(--bg-gradient); color: #f8fafc; font-family: 'Poppins', sans-serif; min-height: 100vh; overflow-x: hidden; padding-bottom: 120px; user-select: none; }
-        .glass-card { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.15); border-radius: 25px; padding: 22px; margin-bottom: 18px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
-        .nav-dock { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 500px; background: rgba(15, 23, 42, 0.95); border-radius: 30px; display: flex; justify-content: space-around; padding: 10px 5px; z-index: 8000; border: 1px solid rgba(255,255,255,0.15); }
-        .nav-link-3d { color: rgba(255,255,255,0.4); text-decoration: none; text-align: center; flex: 1; font-size: 0.7rem; cursor: pointer; }
-        .nav-link-3d.active { color: var(--primary); transform: translateY(-5px); text-shadow: 0 0 10px var(--primary); }
-        .nav-link-3d i { font-size: 1.2rem; display: block; margin-bottom: 2px; }
-        .btn-premium { background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; color: white; padding: 8px 18px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; }
-        .page { display: none; } .page.active { display: block; animation: fadeInUp 0.4s ease-out; }
-        .test-card-img { width: 100%; height: 140px; object-fit: cover; border-radius: 15px; margin-bottom: 12px; }
-        #exam-overlay, #testListOverlay, #result-overlay, #page-overlay { display: none; position: fixed; inset: 0; background: #020617; z-index: 9999; flex-direction: column; overflow-y:auto; }
-        .opt-btn { text-align: left; padding: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; width: 100%; color: white; margin-bottom: 10px; }
-        .opt-btn.selected { background: var(--primary); border-color: white; }
-        #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 9999; }
-        iframe { width: 100%; height: 92vh; border: none; }
-        .review-card { border-left: 5px solid #6366f1; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-        .review-card.correct { border-color: #22c55e; } .review-card.wrong { border-color: #ef4444; }
-        .stats-header { background: linear-gradient(to right, #4f46e5, #7c3aed); border-radius: 20px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .lock-icon { opacity: 0.5; filter: grayscale(1); }
-        .rank-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .rank-num { width: 30px; font-weight: bold; color: #fbbf24; }
-        .auth-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; padding: 10px; width: 100%; margin-bottom: 10px; outline: none; }
-        .carousel-item img { height: 180px; object-fit: cover; width: 100%; border-radius: 20px; }
-        @media(min-width: 768px) { .carousel-item img { height: 350px; } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeInUp 0.3s ease; }
+        .nav-btn.active { background: #4f46e5; color: white; border-color: #6366f1; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body oncontextmenu="return false;">
-
-    <div id="auth-screen" style="position:fixed; inset:0; background:#020617; z-index:9000; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-        <div class="glass-card text-center" style="width: 90%; max-width: 380px;">
-            <img src="./manoj.jpg.jpg" style="width: 90px; height:90px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 15px; object-fit:cover;">
-            <h3 class="fw-800 mb-4">MANOJ NEHRA</h3>
-            
-            <div id="signup-box">
-                <input type="text" id="su-name" placeholder="Full Name" class="auth-input">
-                <input type="email" id="su-email" placeholder="Email Address" class="auth-input">
-                <input type="password" id="su-pass" placeholder="Password (Min 6 chars)" class="auth-input">
-                <button onclick="doSignup()" class="btn btn-primary w-100 rounded-pill py-2 mt-2 fw-bold">Sign Up</button>
-                <p class="mt-3 small opacity-75">Already have an account? <span onclick="showLogin()" class="text-primary fw-bold cursor-pointer" style="cursor:pointer;">Login Now</span></p>
-            </div>
-
-            <div id="login-box" style="display:none;">
-                <input type="email" id="li-email" placeholder="Email Address" class="auth-input">
-                <input type="password" id="li-pass" placeholder="Password" class="auth-input">
-                <button onclick="doLogin()" class="btn btn-success w-100 rounded-pill py-2 mt-2 fw-bold">Login</button>
-                <p class="mt-3 small opacity-75">New user? <span onclick="showSignup()" class="text-success fw-bold cursor-pointer" style="cursor:pointer;">Signup Now</span></p>
-            </div>
-
-            <p id="auth-error" class="text-danger mt-3 small" style="display:none;"></p>
-            <button onclick="openPageModal('privacy')" class="btn btn-link text-white small mt-3 opacity-50 text-decoration-none">Privacy Policy</button>
-        </div>
-    </div>
-
-    <div id="main-app" style="display:none;">
-        <header class="container pt-4">
-            <div class="d-flex align-items-center gap-2">
-                <img src="./manoj.jpg.jpg" style="width:40px; height:40px; border-radius: 50%;">
-                <div class="d-flex flex-column">
-                    <h6 class="fw-bold mb-0">MANOJ NEHRA</h6>
-                    <div id="user-display-name" class="small text-info fw-bold" style="font-size: 0.75rem;">Student</div>
-                </div>
-            </div>
-        </header>
-
-        <div class="container mt-2">
-            <div id="homePage" class="page active">
-                <div id="homeSlider" class="carousel slide mb-4 rounded-4 shadow" data-bs-ride="carousel"><div class="carousel-inner" id="slider-box"></div></div>
-                <div class="py-3"><h3 class="fw-800">Premium Notes</h3></div>
-                <div id="notesGrid" class="row g-3"></div>
-            </div>
-            <div id="testSeriesPage" class="page">
-                <div class="py-3 text-center"><h3 class="fw-800">Online Test Series</h3></div>
-                <div id="testSeriesGrid" class="row g-3"></div>
-            </div>
-            <div id="purchasePage" class="page pt-3">
-                <h3 class="text-center mb-4">मेरी लाइब्रेरी</h3>
-                <h6 class="text-indigo-500 mb-3"><i class="fas fa-book me-2"></i>खरीदे गए नोट्स</h6>
-                <div id="myNotesGrid" class="mb-4"></div>
-                <h6 class="text-indigo-500 mb-3"><i class="fas fa-edit me-2"></i>खरीदी गई टेस्ट सीरीज</h6>
-                <div id="myTestsGrid"></div>
-            </div>
-            <div id="profilePage" class="page">
-                <div class="glass-card text-center mt-4">
-                    <img id="u-img" src="" class="rounded-circle mb-3 shadow" style="width: 80px; height:80px; border: 3px solid var(--primary); object-fit:cover;">
-                    <h4 id="u-name">Student</h4>
-                </div>
-                <div class="glass-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0 fw-bold">Personal Details</h6>
-                        <button id="btn-edit-profile" onclick="toggleProfileEdit()" class="btn btn-sm btn-outline-light"><i class="fa fa-pencil"></i> Edit</button>
-                    </div>
-                    <div class="mb-2"><label class="small opacity-50">Full Name</label><input type="text" id="p-name" class="form-control bg-dark text-white border-secondary" disabled></div>
-                    <div class="mb-2"><label class="small opacity-50">Mobile Number</label><input type="number" id="p-phone" class="form-control bg-dark text-white border-secondary" disabled></div>
-                    <div class="mb-3"><label class="small opacity-50">State (India)</label><select id="p-state" class="form-select bg-dark text-white border-secondary" disabled><option value="">Select State</option><option>Rajasthan</option><option>Delhi</option><option>Uttar Pradesh</option><option>Haryana</option><option>Bihar</option><option>Madhya Pradesh</option><option>Punjab</option><option>Gujarat</option><option>Maharashtra</option><option>Other</option></select></div>
-                    <button id="btn-save-profile" onclick="saveProfile()" class="btn btn-primary w-100" style="display:none;">Save Changes</button>
-                </div>
-                <div class="glass-card p-0 overflow-hidden">
-                    <button onclick="openPageModal('about')" class="w-100 text-start btn btn-dark rounded-0 py-3 border-bottom border-secondary"><i class="fa fa-info-circle me-3 width-20"></i>About Us</button>
-                    <button onclick="window.open('https://wa.me/918769089527', '_blank')" class="w-100 text-start btn btn-dark rounded-0 py-3 border-bottom border-secondary"><i class="fa-brands fa-whatsapp me-3 width-20 text-success"></i>Contact Us</button>
-                    <button onclick="openPageModal('privacy')" class="w-100 text-start btn btn-dark rounded-0 py-3"><i class="fa fa-shield-alt me-3 width-20"></i>Privacy Policy</button>
-                </div>
-                <div class="text-center mt-4">
-                    <button class="btn btn-danger w-100 py-2" onclick="logout()">Logout Account</button>
-                </div>
-            </div>
-        </div>
-
-        <nav class="nav-dock">
-            <div class="nav-link-3d active" onclick="showPage('homePage', this)"><i class="fas fa-home"></i>Home</div>
-            <div class="nav-link-3d" onclick="showPage('testSeriesPage', this)"><i class="fas fa-edit"></i>Tests</div>
-            <div class="nav-link-3d" onclick="showPage('purchasePage', this)"><i class="fas fa-bookmark"></i>Library</div>
-            <div class="nav-link-3d" onclick="showPage('profilePage', this)"><i class="fas fa-user"></i>Profile</div>
+<body class="flex flex-col md:flex-row min-h-screen">
+    <aside class="w-full md:w-72 bg-slate-900 border-r border-white/5 flex flex-col p-6 shrink-0 z-50">
+        <h2 class="text-2xl font-black text-indigo-500 italic mb-10">ADMIN<span class="text-white">PRO</span></h2>
+        <nav class="flex flex-row md:flex-col gap-2 overflow-x-auto">
+            <button onclick="switchTab('tab-cat', this)" class="nav-btn active p-4 rounded-2xl text-left flex items-center gap-3 whitespace-nowrap"><i class="fa-solid fa-folder-tree"></i> Categories</button>
+            <button onclick="switchTab('tab-add', this)" class="nav-btn p-4 rounded-2xl text-left flex items-center gap-3 text-slate-400 whitespace-nowrap"><i class="fa-solid fa-plus-circle"></i> Add/Edit Series</button>
+            <button onclick="switchTab('tab-manage', this)" class="nav-btn p-4 rounded-2xl text-left flex items-center gap-3 text-slate-400 whitespace-nowrap"><i class="fa-solid fa-layer-group"></i> Live Series</button>
+            <button onclick="switchTab('tab-slider', this)" class="nav-btn p-4 rounded-2xl text-left flex items-center gap-3 text-slate-400 whitespace-nowrap"><i class="fa-solid fa-images"></i> App Slider</button>
+            <button onclick="switchTab('tab-pages', this)" class="nav-btn p-4 rounded-2xl text-left flex items-center gap-3 text-slate-400 whitespace-nowrap"><i class="fa-solid fa-file-pen"></i> Pages & Content</button>
         </nav>
-    </div>
+    </aside>
 
-    <div id="testListOverlay" class="p-4">
-        <button onclick="closeTestList()" class="btn btn-sm btn-outline-light mb-3"><i class="fa fa-arrow-left"></i> Back</button>
-        <div class="stats-header"><div><small class="opacity-75 d-block">Total Series Score</small><h4 id="global-score-text" class="fw-bold mb-0">****</h4></div><button onclick="toggleGlobalScore()" class="btn btn-sm btn-light rounded-pill px-3"><i id="score-toggle-icon" class="fa fa-eye-slash"></i></button></div>
-        <h2 id="current-series-title" class="text-center mb-4 fs-5"></h2>
-        <div id="test-list-container" class="container"></div>
-    </div>
-
-    <div id="exam-overlay">
-        <header class="p-3 bg-dark d-flex justify-content-between"><span id="exam-timer" class="text-danger fw-bold fs-4">60:00</span><button onclick="finishExam()" class="btn btn-success">SUBMIT</button></header>
-        <div class="flex-grow-1 container d-flex align-items-center justify-content-center">
-            <div class="glass-card w-100" style="max-width: 600px;">
-                <p id="q-num" class="text-primary fw-bold small mb-2"></p>
-                <div id="q-text" class="mb-4"></div>
-                <div id="opt-box"></div>
-                <div class="d-flex justify-content-between mt-4"><button onclick="prevQ()" class="btn btn-outline-light">Prev</button><button onclick="nextQ()" class="btn btn-primary">Next</button></div>
+    <main class="flex-1 p-6 md:p-12 overflow-y-auto">
+        <!-- Categories Tab -->
+        <div id="tab-cat" class="tab-content active">
+            <h1 class="text-3xl font-bold mb-8">Categories</h1>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="bg-slate-800 p-8 rounded-[2rem] border border-white/5">
+                    <input id="cat-input" type="text" placeholder="SSC, Police..." class="w-full bg-slate-900 p-4 rounded-2xl mb-4 outline-none ring-1 ring-white/10">
+                    <button onclick="addCategory()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold hover:bg-indigo-500 transition">Add Category</button>
+                </div>
+                <div id="cat-display-list" class="space-y-3"></div>
             </div>
         </div>
-    </div>
 
-    <div id="result-overlay" class="p-4">
-        <button onclick="closeReview()" class="btn btn-sm btn-outline-light mb-4"><i class="fa fa-arrow-left"></i> Home</button>
-        <div class="glass-card text-center mb-3 border-success"><h5 class="text-success fw-bold">RESULT</h5><h1 class="fw-bold display-4" id="res-score">00</h1><p class="small mb-0">Total Score</p></div>
-        <div class="d-flex gap-2 mb-4"><button onclick="showReviewAnswerKey()" class="btn btn-primary w-100">Review Answers</button></div>
-        <h6 class="fw-bold mb-3 text-warning"><i class="fa fa-trophy me-2"></i>Top 15 Students</h6>
-        <div class="glass-card p-0 overflow-hidden"><div id="leaderboard-list"><p class="text-center p-3 small opacity-50">Loading ranks...</p></div></div>
-        <div id="review-container" class="container mt-4" style="display:none;"></div>
-    </div>
+        <!-- Add/Edit Tab -->
+        <div id="tab-add" class="tab-content">
+            <h1 id="form-heading" class="text-3xl font-bold mb-8">Publish New Series</h1>
+            <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-white/5 max-w-4xl">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <input id="s-title" type="text" placeholder="Series Title" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-white/5">
+                    <input id="s-price" type="number" placeholder="Price (INR)" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-white/5">
+                    <input id="s-duration" type="number" placeholder="Duration (Minutes)" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-yellow-500">
+                    <input id="s-pos" type="number" step="0.1" placeholder="Marks per Q" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-indigo-500">
+                    <input id="s-ratio" type="number" placeholder="Neg Ratio" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-red-500">
+                    <select id="s-cat-select" class="w-full bg-slate-900 p-4 rounded-2xl ring-1 ring-white/5"></select>
+                    <div onclick="document.getElementById('img-file').click()" class="bg-slate-900 p-4 rounded-2xl text-center border-2 border-dashed border-white/10 cursor-pointer">
+                        <input type="file" id="img-file" hidden accept="image/*" onchange="previewThumbnail(event)">
+                        <span id="img-placeholder">Upload Thumbnail</span>
+                        <img id="img-preview-box" class="hidden w-full h-32 object-cover rounded-xl">
+                    </div>
+                </div>
 
-    <div id="page-overlay" class="p-4"><div class="d-flex justify-content-between align-items-center mb-4"><h3 id="page-title" class="fw-bold mb-0">Page</h3><button onclick="document.getElementById('page-overlay').style.display='none'" class="btn btn-sm btn-light rounded-pill">Close</button></div><div id="page-body" class="glass-card" style="white-space: pre-wrap;">Loading...</div></div>
-    <div id="reader-overlay"><div class="p-2 bg-dark d-flex justify-content-between align-items-center"><button class="btn btn-primary btn-sm" id="btn-download"><i class="fa fa-download"></i> Download</button><span class="text-primary small fw-bold">SECURE VIEWER</span><button class="btn btn-danger btn-sm" onclick="closeReader()">Close X</button></div><iframe id="pdfViewer"></iframe></div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-dashed border-indigo-500/30 mb-4">
+                    <h6 class="text-indigo-400 text-xs font-bold uppercase mb-2">Image Code Tool</h6>
+                    <div class="flex gap-4 items-center">
+                        <input type="file" id="q-img-input" accept="image/*" class="text-xs text-slate-400" onchange="convertQImage()">
+                        <input type="text" id="q-img-output" placeholder="Code here..." class="flex-1 bg-black/20 p-2 rounded text-xs text-indigo-300 outline-none" readonly onclick="this.select(); document.execCommand('copy'); Swal.fire('Copied!', 'Paste in JSON', 'success')">
+                    </div>
+                </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, set, get, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+                <label class="text-xs text-indigo-400 font-bold mb-2 block uppercase">Questions JSON</label>
+                <!-- PLACEHOLDER EXPLAINS DATE FORMAT -->
+                <textarea id="s-json" rows="12" placeholder='[
+  { 
+    "name": "Test 1", 
+    "questions": [...] 
+  },
+  { 
+    "name": "Test 2 (Scheduled)", 
+    "unlockDate": "2026-05-20", 
+    "questions": [...] 
+  }
+]' class="w-full bg-slate-900 p-5 rounded-3xl outline-none font-mono text-xs mb-6 text-green-400"></textarea>
+                <button onclick="publishSeries()" class="w-full bg-green-600 py-5 rounded-[2rem] font-black uppercase">Publish Live</button>
+            </div>
+        </div>
 
-        const firebaseConfig = { apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo", authDomain: "showpdf-ffa34.firebaseapp.com", databaseURL: "https://showpdf-ffa34-default-rtdb.firebaseio.com", projectId: "showpdf-ffa34", storageBucket: "showpdf-ffa34.appspot.com" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
+        <!-- Manage Tab -->
+        <div id="tab-manage" class="tab-content">
+            <h1 class="text-3xl font-bold mb-8">Manage Live Series</h1>
+            <div id="live-series-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
 
-        // --- AUTH TOGGLE LOGIC ---
-        window.showLogin = () => { document.getElementById('signup-box').style.display='none'; document.getElementById('login-box').style.display='block'; document.getElementById('auth-error').style.display='none'; };
-        window.showSignup = () => { document.getElementById('login-box').style.display='none'; document.getElementById('signup-box').style.display='block'; document.getElementById('auth-error').style.display='none'; };
+        <!-- Slider Tab -->
+        <div id="tab-slider" class="tab-content">
+            <h1 class="text-3xl font-bold mb-8">App Home Slider</h1>
+            <div class="bg-slate-800 p-8 rounded-[2rem] border border-white/5 mb-8">
+                <div class="flex gap-4 items-center">
+                    <input type="file" id="slider-input" accept="image/*" class="text-sm text-slate-400">
+                    <button onclick="uploadSliderImage()" class="bg-indigo-600 px-6 py-2 rounded-xl font-bold">Upload Slide</button>
+                </div>
+            </div>
+            <div id="slider-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
 
-        window.doSignup = () => {
-            const name = document.getElementById('su-name').value;
-            const email = document.getElementById('su-email').value;
-            const pass = document.getElementById('su-pass').value;
-            if(!name || !email || !pass) return Swal.fire('Error', 'Please fill all fields', 'error');
-            createUserWithEmailAndPassword(auth, email, pass).then((res) => {
-                updateProfile(res.user, { displayName: name }).then(() => {});
-            }).catch(e => document.getElementById('auth-error').innerText = e.message);
-        };
+        <!-- Pages Tab -->
+        <div id="tab-pages" class="tab-content">
+            <h1 class="text-3xl font-bold mb-8">App Pages Content</h1>
+            <div class="bg-slate-800 p-8 rounded-[2rem] border border-white/5 max-w-4xl">
+                <div class="mb-6">
+                    <label class="block mb-2 text-indigo-400 font-bold">Select Page</label>
+                    <select id="page-selector" onchange="loadPageContent()" class="w-full bg-slate-900 p-4 rounded-2xl outline-none ring-1 ring-white/10">
+                        <option value="privacy">Privacy Policy</option>
+                        <option value="about">About Us</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <textarea id="page-content" rows="10" class="w-full bg-slate-900 p-5 rounded-2xl outline-none ring-1 ring-white/5 font-mono"></textarea>
+                </div>
+                <button onclick="savePageContent()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold hover:bg-indigo-500 transition">Save Page Data</button>
+            </div>
+        </div>
+    </main>
 
-        window.doLogin = () => {
-            const email = document.getElementById('li-email').value;
-            const pass = document.getElementById('li-pass').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(e => {
-                document.getElementById('auth-error').style.display='block';
-                document.getElementById('auth-error').innerText = e.message;
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyAhg7hKJ123JRAfio7fymK543XpuNonMHo", databaseURL: "https://showpdf-ffa34-default-rtdb.firebaseio.com", projectId: "showpdf-ffa34" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let base64Image = "";
+
+        function switchTab(id, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
+            if(id !== 'tab-add') resetForm();
+            if(id === 'tab-pages') loadPageContent();
+        }
+
+        function addCategory() {
+            const val = document.getElementById('cat-input').value.trim();
+            if(val) db.ref('categories').push(val).then(() => document.getElementById('cat-input').value = "");
+        }
+
+        db.ref('categories').on('value', snap => {
+            const list = document.getElementById('cat-display-list');
+            const select = document.getElementById('s-cat-select');
+            list.innerHTML = ""; select.innerHTML = "";
+            snap.forEach(c => {
+                list.innerHTML += `<div class="bg-slate-800 p-4 rounded-2xl flex justify-between"><span>${c.val()}</span><button onclick="db.ref('categories/${c.key}').remove()">Delete</button></div>`;
+                select.innerHTML += `<option value="${c.val()}">${c.val()}</option>`;
             });
-        };
-
-        window.logout = () => signOut(auth).then(() => location.reload());
-
-        let currentExamQs=[], userAnswers=[], qIdx=0, examTimer, curPos=1, curRatio=3, activeSeriesId="", activeTestIdx=0, globalScoreHidden=true, lastFetchedTotalScore=0, questionDurations=[], lastQTime=0;
-
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='block';
-                document.getElementById('u-name').innerText = user.displayName || "Student"; document.getElementById('u-img').src = 'https://i.ibb.co/5GzXk7j/user.png';
-                document.getElementById('user-display-name').innerText = user.displayName || "Student";
-                loadNotes(); loadTestSeries(); loadUserProfile(); loadSlider();
-            } else { document.getElementById('auth-screen').style.display='flex'; document.getElementById('main-app').style.display='none'; }
         });
 
-        async function loadUserProfile() {
-            const snap = await get(ref(db, `users/${auth.currentUser.uid}/profile`));
-            if(snap.exists()) { const data=snap.val(); document.getElementById('p-name').value=data.name||auth.currentUser.displayName; document.getElementById('p-phone').value=data.phone||""; document.getElementById('p-state').value=data.state||""; } 
-            else { document.getElementById('p-name').value=auth.currentUser.displayName; }
+        function previewThumbnail(e) {
+            const reader = new FileReader();
+            reader.onload = () => { base64Image = reader.result; document.getElementById('img-preview-box').src = base64Image; document.getElementById('img-preview-box').classList.remove('hidden'); document.getElementById('img-placeholder').classList.add('hidden'); };
+            reader.readAsDataURL(e.target.files[0]);
         }
-        window.toggleProfileEdit = () => { const inputs=['p-name','p-phone','p-state']; const dis=document.getElementById('p-name').disabled; inputs.forEach(id=>document.getElementById(id).disabled=!dis); document.getElementById('btn-save-profile').style.display=dis?'block':'none'; document.getElementById('btn-edit-profile').innerHTML=dis?'<i class="fa fa-times"></i> Cancel':'<i class="fa fa-pencil"></i> Edit'; };
-        window.saveProfile = async () => {
-            const data={ name:document.getElementById('p-name').value, phone:document.getElementById('p-phone').value, state:document.getElementById('p-state').value };
-            if(!data.phone||!data.state) return Swal.fire('Error','Please fill all','warning');
-            await set(ref(db, `users/${auth.currentUser.uid}/profile`), data); window.toggleProfileEdit(); Swal.fire('Success','Updated','success');
-        };
-        window.openPageModal = async (type) => { document.getElementById('page-overlay').style.display='flex'; document.getElementById('page-title').innerText=type==='privacy'?"Privacy":"About Us"; const snap=await get(ref(db, `appPages/${type}`)); document.getElementById('page-body').innerHTML=snap.val()||"Loading..."; };
-        window.toggleGlobalScore = () => { globalScoreHidden=!globalScoreHidden; document.getElementById('global-score-text').innerText=globalScoreHidden?"****":lastFetchedTotalScore.toFixed(2); document.getElementById('score-toggle-icon').className=globalScoreHidden?"fa fa-eye-slash":"fa fa-eye"; };
-        
-        function loadSlider() { onValue(ref(db, 'appSlider'), s => { const b=document.getElementById('slider-box'); b.innerHTML=""; let f=true; s.forEach(c=>{ b.innerHTML+=`<div class="carousel-item ${f?'active':''}"><img src="${c.val().image}" class="d-block w-100"></div>`; f=false; }); }); }
-        
-        async function loadNotes() {
-            if(!auth.currentUser) return;
-            const snap = await get(ref(db, `users/${auth.currentUser.uid}/purchases/notes`)); const p = snap.exists() ? snap.val() : {};
-            const n = [{id:"note1", title:"Raj. Police Notes", price:99, file:"raj.pdf"}, {id:"note2", title:"Patwari Notes", price:149, file:"patwari.pdf"}];
-            let h='', lib=''; n.forEach(x => { const pd=p[x.id]?.paid; h+=`<div class="col-12"><div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button class="btn-premium" onclick="${pd?`openReader('${x.file}')`:`buyNote('${x.id}',${x.price})`}">${pd?'Open':'₹'+x.price}</button></div></div>`; if(pd) lib+=`<div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button class="btn btn-sm btn-success" onclick="openReader('${x.file}')">OPEN</button></div>`; });
-            document.getElementById('notesGrid').innerHTML=h; document.getElementById('myNotesGrid').innerHTML=lib||'<small>No notes</small>';
+
+        function convertQImage() {
+            const file = document.getElementById('q-img-input').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = () => { document.getElementById('q-img-output').value = reader.result; };
+            reader.readAsDataURL(file);
         }
-        function loadTestSeries() {
-            if(!auth.currentUser) return;
-            onValue(ref(db, 'testSeries'), async s => { const d=s.val(); if(!d) return;
-                const pSnap = await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests`)); const p=pSnap.exists()?pSnap.val():{};
-                const g=document.getElementById('testSeriesGrid'); g.innerHTML=""; const l=document.getElementById('myTestsGrid'); l.innerHTML="";
-                Object.keys(d).forEach(k => { const x=d[k]; const pd=p[k]?.paid; g.innerHTML+=`<div class="col-6 col-md-4"><div class="glass-card text-center p-2"><img src="${x.image}" class="test-card-img"><h6 class="small fw-bold">${x.title}</h6><button onclick="handleTestAction('${k}',${x.price},'${x.title}')" class="btn-premium w-100 mt-2">${pd?'Open':'₹'+x.price}</button></div></div>`; if(pd) l.innerHTML+=`<div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button onclick="openTestList('${k}','${x.title}')" class="btn btn-sm btn-primary">VIEW</button></div>`; });
-            });
-        }
-        window.handleTestAction = async (id,pr,ti) => { const s=await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests/${id}`)); if(s.exists()&&s.val().paid) openTestList(id,ti); else buyTest(id,pr); };
-        window.buyNote=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/notes/${id}`),{paid:true}); loadNotes(); }}).open(); };
-        window.buyTest=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/tests/${id}`),{paid:true}); loadTestSeries(); }}).open(); };
 
-        window.openTestList = async (id, title) => {
-            activeSeriesId=id; document.getElementById('testListOverlay').style.display='flex'; document.getElementById('current-series-title').innerText=title;
-            const s=await get(ref(db, `testSeries/${id}`)); 
-            const t=JSON.parse(s.val().questions||"[]");
-            const p=await get(ref(db, `users/${auth.currentUser.uid}/testResults/${id}`)); const r=p.exists()?p.val():{};
-            lastFetchedTotalScore=Object.values(r).reduce((a,b)=>a+b,0); if(!globalScoreHidden) document.getElementById('global-score-text').innerText=lastFetchedTotalScore.toFixed(2);
-            await set(ref(db, `users/${auth.currentUser.uid}/totalScore`), lastFetchedTotalScore);
-            const b=document.getElementById('test-list-container'); b.innerHTML="";
-            
-            // === FIXED LOGIC FOR TEST LIST DISPLAY ===
-            t.forEach((item,i)=>{ 
-                // Determine Title and Count based on JSON format (Array vs Object)
-                let setName = `Test ${i+1}`;
-                let qCount = 0;
-                if(item.questions && Array.isArray(item.questions)) {
-                    setName = item.name || setName;
-                    qCount = item.questions.length;
-                } else {
-                    qCount = item.length;
-                }
+        function publishSeries() {
+            const id = document.getElementById('edit-id').value;
+            const jsonVal = document.getElementById('s-json').value;
 
-                const c=r[i]!==undefined; 
-                const l=i>0&&r[i-1]===undefined; 
-                b.innerHTML+=`<div class="glass-card d-flex justify-content-between align-items-center ${l?'lock-icon':''}"><div><b>${setName}</b><br><small>${qCount} Qns ${c?`| Score: ${r[i].toFixed(1)}`:''}</small></div><button class="btn ${l?'btn-secondary':'btn-primary'} btn-sm rounded-pill" onclick="${l?'':`startExamNow('${id}',${i})`}" ${l?'disabled':''}>${c?'RETEST':(l?'LOCK':'START')}</button></div>`; 
-            });
-        };
-        window.closeTestList=()=>document.getElementById('testListOverlay').style.display='none';
-
-        window.startExamNow = async (sid, idx) => {
-            activeTestIdx=idx; 
-            const snap=await get(ref(db, `testSeries/${sid}`)); 
-            const s=snap.val();
-            curPos=parseFloat(s.posMarks)||1; 
-            curRatio=parseFloat(s.negRatio)||3; 
-            
-            // === FIXED LOGIC FOR QUESTION EXTRACTION ===
-            let dm=parseInt(s.duration)||60;
-            const rawQuestions = JSON.parse(s.questions);
-            const selectedSet = rawQuestions[idx];
-
-            if(selectedSet.questions && Array.isArray(selectedSet.questions)) {
-                // It's the new format (Object with name/questions)
-                currentExamQs = selectedSet.questions;
-                if(selectedSet.duration) dm = parseInt(selectedSet.duration);
-            } else {
-                // It's the old format (Just Array)
-                currentExamQs = selectedSet;
+            try {
+                const parsed = JSON.parse(jsonVal);
+                if (!Array.isArray(parsed)) throw new Error("JSON must be array");
+            } catch (e) {
+                return Swal.fire('Invalid JSON', 'Please paste valid JSON inside [] brackets', 'error');
             }
 
-            userAnswers=new Array(currentExamQs.length).fill(null); 
-            questionDurations=new Array(currentExamQs.length).fill(0); 
-            lastQTime=Date.now();
-            qIdx=0; closeTestList(); document.getElementById('exam-overlay').style.display='flex'; document.querySelector('.nav-dock').style.display='none';
-            renderQuestion(); startTimer(dm*60);
-        };
-
-        function renderQuestion() {
-            const q=currentExamQs[qIdx]; document.getElementById('q-num').innerText=`Q ${qIdx+1}/${currentExamQs.length}`;
-            let h=q.q; if(q.img) h+=`<div class="mt-3 text-center"><img src="${q.img}" class="img-fluid rounded border border-secondary" style="max-height:200px;max-width:100%"></div>`;
-            document.getElementById('q-text').innerHTML=h; const b=document.getElementById('opt-box'); b.innerHTML="";
-            q.options.forEach((o,i)=>{ const s=userAnswers[qIdx]===o; b.innerHTML+=`<button onclick="selectOpt(${i})" class="opt-btn ${s?'selected':''}">${o}</button>`; });
+            const data = {
+                title: document.getElementById('s-title').value,
+                price: document.getElementById('s-price').value,
+                duration: document.getElementById('s-duration').value || 60,
+                posMarks: document.getElementById('s-pos').value || 1,
+                negRatio: document.getElementById('s-ratio').value || 3,
+                cat: document.getElementById('s-cat-select').value,
+                questions: jsonVal,
+                image: base64Image
+            };
+            const ref = id ? db.ref('testSeries/' + id) : db.ref('testSeries').push();
+            ref.set(data).then(() => { Swal.fire('Success', 'Published!', 'success'); switchTab('tab-manage', document.querySelectorAll('.nav-btn')[2]); });
         }
-        
-        function trackTime() { let n=Date.now(); questionDurations[qIdx]+=(n-lastQTime)/1000; lastQTime=n; }
 
-        window.selectOpt = (i) => { userAnswers[qIdx]=currentExamQs[qIdx].options[i]; renderQuestion(); setTimeout(()=>{ if(qIdx<currentExamQs.length-1){ trackTime(); qIdx++; renderQuestion(); } },300); };
-        window.nextQ=()=>{ if(qIdx<currentExamQs.length-1){ trackTime(); qIdx++; renderQuestion(); } };
-        window.prevQ=()=>{ if(qIdx>0){ trackTime(); qIdx--; renderQuestion(); } };
+        db.ref('testSeries').on('value', snap => {
+            const grid = document.getElementById('live-series-grid'); grid.innerHTML = "";
+            snap.forEach(c => {
+                const s = c.val();
+                let cNum = 0; try { cNum = JSON.parse(s.questions).length } catch(e){}
+                grid.innerHTML += `<div class="bg-slate-800 p-5 rounded-[2rem] border border-white/5 shadow-xl"><img src="${s.image}" class="w-full h-32 object-cover rounded-2xl mb-4"><h4>${s.title}</h4><p class="text-xs text-indigo-400 mt-2">${cNum} Sets</p><div class="flex gap-2 mt-4"><button onclick="editSeries('${c.key}')" class="flex-1 bg-indigo-600 py-2 rounded-xl">Edit</button><button onclick="db.ref('testSeries/${c.key}').remove()" class="bg-red-500 px-4 rounded-xl">Del</button></div></div>`;
+            });
+        });
 
-        function startTimer(s){ clearInterval(examTimer); examTimer=setInterval(()=>{ s--; let m=Math.floor(s/60),sec=s%60; document.getElementById('exam-timer').innerText=`${m}:${sec<10?'0':''}${sec}`; if(s<=0) finishExam(); },1000); }
+        function editSeries(id) {
+            db.ref('testSeries/' + id).once('value', snap => {
+                const s = snap.val();
+                document.getElementById('edit-id').value = id;
+                document.getElementById('s-title').value = s.title;
+                document.getElementById('s-price').value = s.price;
+                document.getElementById('s-duration').value = s.duration || 60;
+                document.getElementById('s-pos').value = s.posMarks;
+                document.getElementById('s-ratio').value = s.negRatio;
+                document.getElementById('s-json').value = s.questions;
+                base64Image = s.image;
+                document.getElementById('img-preview-box').src = s.image;
+                document.getElementById('img-preview-box').classList.remove('hidden');
+                document.getElementById('img-placeholder').classList.add('hidden');
+                switchTab('tab-add', document.querySelectorAll('.nav-btn')[1]);
+                document.getElementById('form-heading').innerText = "Edit Series";
+            });
+        }
 
-        window.finishExam = async () => {
-            trackTime(); clearInterval(examTimer); document.getElementById('exam-overlay').style.display='none';
-            let c=0, w=0; currentExamQs.forEach((q,i)=>{ if(userAnswers[i]===(q.ans||q.answer)) c++; else if(userAnswers[i]) w++; });
-            let ded=(w*(curPos/curRatio)); let tot=(c*curPos)-ded;
-            await set(ref(db, `users/${auth.currentUser.uid}/testResults/${activeSeriesId}/${activeTestIdx}`), tot);
-            document.getElementById('res-score').innerText=tot.toFixed(2); document.getElementById('result-overlay').style.display='block'; document.getElementById('review-container').style.display='none'; loadLeaderboard();
-        };
+        function resetForm() { document.getElementById('edit-id').value = ""; document.getElementById('s-json').value=""; document.getElementById('img-preview-box').classList.add('hidden'); document.getElementById('img-placeholder').classList.remove('hidden'); base64Image = ""; }
 
-        function loadLeaderboard() { const l=document.getElementById('leaderboard-list'); onValue(query(ref(db,'users'),orderByChild('totalScore'),limitToLast(15)), s=>{ l.innerHTML=""; let u=[]; s.forEach(c=>u.push({n:c.val().profile?.name||"User",s:c.val().totalScore||0})); u.reverse().forEach((x,i)=>l.innerHTML+=`<div class="rank-row"><div class="d-flex gap-3"><span class="rank-num">#${i+1}</span><span>${x.n}</span></div><span class="text-warning fw-bold">${x.s.toFixed(1)}</span></div>`); }); }
+        function uploadSliderImage() {
+            const file = document.getElementById('slider-input').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                db.ref('appSlider').push({ image: reader.result }).then(() => {
+                    Swal.fire('Success', 'Slide Added', 'success');
+                    document.getElementById('slider-input').value = "";
+                });
+            };
+            reader.readAsDataURL(file);
+        }
 
-        window.showReviewAnswerKey = () => {
-            const b=document.getElementById('review-container'); b.innerHTML="";
-            currentExamQs.forEach((q,i)=>{
-                const r=userAnswers[i]===(q.ans||q.answer); let t=Math.round(questionDurations[i]||0); let img=q.img?`<div class="my-2"><img src="${q.img}" style="max-height:100px;max-width:100%"></div>`:'';
-                b.innerHTML+=`<div class="review-card ${r?'correct':'wrong'}"><div class="d-flex justify-content-between mb-2"><h6>Q.${i+1}</h6><span class="badge bg-secondary"><i class="fa fa-clock me-1"></i>${t}s</span></div><div class="fw-bold mb-2">${q.q}</div>${img}<p class="small mb-1">Your: ${userAnswers[i]||'None'}</p><p class="small text-success">Right: ${q.ans||q.answer}</p></div>`;
-            }); b.style.display='block';
-        };
-        window.closeReview=()=>{ document.getElementById('result-overlay').style.display='none'; document.querySelector('.nav-dock').style.display='flex'; openTestList(activeSeriesId, document.getElementById('current-series-title').innerText); };
-        window.showPage=(id,e)=>{ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav-link-3d').forEach(n=>n.classList.remove('active')); if(e) e.classList.add('active'); };
-        window.openReader=(f)=>{ let u=window.location.href.split('index.html')[0]+encodeURIComponent(f); document.getElementById('reader-overlay').style.display='block'; document.getElementById('pdfViewer').src="https://docs.google.com/viewer?url="+encodeURIComponent(u)+"&embedded=true"; document.getElementById('btn-download').onclick=()=>window.open(u,'_blank'); };
-        window.closeReader=()=>{ document.getElementById('reader-overlay').style.display='none'; document.getElementById('pdfViewer').src=""; };
+        db.ref('appSlider').on('value', snap => {
+            const grid = document.getElementById('slider-grid');
+            grid.innerHTML = "";
+            snap.forEach(c => {
+                grid.innerHTML += `<div class="bg-slate-800 p-3 rounded-xl border border-white/5"><img src="${c.val().image}" class="w-full h-32 object-cover rounded-lg mb-3"><button onclick="db.ref('appSlider/${c.key}').remove()" class="w-full bg-red-500 py-2 rounded-lg text-sm font-bold">Delete Slide</button></div>`;
+            });
+        });
+
+        function loadPageContent() {
+            const page = document.getElementById('page-selector').value;
+            db.ref('appPages/' + page).once('value', snap => {
+                document.getElementById('page-content').value = snap.val() || "";
+            });
+        }
+        function savePageContent() {
+            const page = document.getElementById('page-selector').value;
+            const content = document.getElementById('page-content').value;
+            db.ref('appPages/' + page).set(content).then(() => Swal.fire('Saved!', 'Updated', 'success'));
+        }
     </script>
 </body>
 </html>

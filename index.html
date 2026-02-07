@@ -69,17 +69,19 @@
                     </div>
                 </div>
 
-                <label class="text-xs text-indigo-400 font-bold mb-2 block uppercase">Questions JSON</label>
-                <!-- PLACEHOLDER EXPLAINS DATE FORMAT -->
+                <label class="text-xs text-indigo-400 font-bold mb-2 block uppercase">Questions JSON (Paste Multiple Tests Here)</label>
+                <!-- PLACEHOLDER UPDATED TO SHOW MULTI-TEST & DATE LOCK FORMAT -->
                 <textarea id="s-json" rows="12" placeholder='[
   { 
-    "name": "Test 1", 
-    "questions": [...] 
+    "name": "Test 1: History Special", 
+    "duration": 60,
+    "questions": [ ...Questions Array... ] 
   },
   { 
-    "name": "Test 2 (Scheduled)", 
-    "unlockDate": "2026-05-20", 
-    "questions": [...] 
+    "name": "Test 2: Math (Scheduled)", 
+    "unlockDate": "2026-05-20T10:30:00", 
+    "duration": 45,
+    "questions": [ ...Questions Array... ] 
   }
 ]' class="w-full bg-slate-900 p-5 rounded-3xl outline-none font-mono text-xs mb-6 text-green-400"></textarea>
                 <button onclick="publishSeries()" class="w-full bg-green-600 py-5 rounded-[2rem] font-black uppercase">Publish Live</button>

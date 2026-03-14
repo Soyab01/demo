@@ -460,21 +460,27 @@
             let h='', lib=''; n.forEach(x => { const pd=p[x.id]?.paid; h+=`<div class="col-12"><div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button class="btn" onclick="${pd?`openReader('${x.file}')`:`buyNote('${x.id}',${x.price})`}">${pd?'Open':'₹'+x.price}</button></div></div>`; if(pd) lib+=`<div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button class="btn btn-sm" onclick="openReader('${x.file}')">OPEN</button></div>`; });
             document.getElementById('notesGrid').innerHTML=h; document.getElementById('myNotesGrid').innerHTML=lib||'<small class="text-secondary">No notes purchased</small>';
         }
+
         function loadTestSeries() {
             if(!auth.currentUser) return;
-            onValue(ref(db, 'testSeries'), async s => { const d=s.val(); if(!d) return;
-                const pSnap = await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests`)); const p=pSnap.exists()?pSnap.val():{};
-                const g=document.getElementById('testSeriesGrid'); g.innerHTML=""; const l=document.getElementById('myTestsGrid'); l.innerHTML="";
+            onValue(ref(db, 'testSeries'), async s => { 
+                const d=s.val(); 
+                if(!d) return;
+                
+                const pSnap = await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests`)); 
+                const p=pSnap.exists()?pSnap.val():{};
+                
+                const g=document.getElementById('testSeriesGrid'); g.innerHTML=""; 
+                const l=document.getElementById('myTestsGrid'); l.innerHTML="";
                 
                 Object.keys(d).forEach(k => { 
                     const x = d[k]; 
                     
-                    // FIXED PARSING LOGIC TO PREVENT SYNTAX ERRORS
-                    const pVal = x.price ? Number(x.price) : 0; 
-                    const isFree = (x.isFree === true || x.isFree === "true" || pVal === 0);
+                    // SAFETY NET FOR FREE CHECK
+                    const pVal = Number(x.price) || 0; 
+                    const isFree = (x.isFree === true || String(x.isFree) === "true" || pVal === 0);
                     const pd = p[k]?.paid || isFree;
                     
-                    // SETTING CORRECT TEXT FOR BUTTON
                     let btnText = '₹ ' + pVal;
                     if(isFree) btnText = 'Free Test';
                     else if(pd) btnText = 'Open';
@@ -486,15 +492,37 @@
             }); 
         }
         
-        window.handleTestAction = async (id,pr,ti,isFree) => { 
-            if(isFree) return openTestList(id, ti);
+        window.handleTestAction = async (id, pr, ti, isFree) => { 
+            // DOUBLE SAFETY NET: IF PRICE IS 0 OR isFree IS TRUE, OPEN DIRECTLY
+            if(isFree === true || String(isFree) === "true" || Number(pr) === 0) {
+                return openTestList(id, ti);
+            }
             const s=await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests/${id}`)); 
-            if(s.exists()&&s.val().paid) openTestList(id,ti); 
-            else buyTest(id,pr); 
+            if(s.exists()&&s.val().paid) {
+                openTestList(id,ti); 
+            } else {
+                buyTest(id,pr); 
+            }
         };
         
         window.buyNote=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/notes/${id}`),{paid:true}); loadNotes(); }}).open(); };
-        window.buyTest=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/tests/${id}`),{paid:true}); loadTestSeries(); }}).open(); };
+        
+        window.buyTest = (id, p) => { 
+            // FINAL SAFETY NET: IF RAZORPAY TRIES TO OPEN WITH AMOUNT 0, AUTO UNLOCK IT
+            if(Number(p) === 0) {
+                set(ref(db,`users/${auth.currentUser.uid}/purchases/tests/${id}`),{paid:true}).then(() => loadTestSeries());
+                return;
+            }
+            new Razorpay({
+                key: "rzp_live_Ry7zglI0OnE1Jo", 
+                amount: p * 100, 
+                name: "Manoj", 
+                handler: async () => { 
+                    await set(ref(db,`users/${auth.currentUser.uid}/purchases/tests/${id}`), {paid:true}); 
+                    loadTestSeries(); 
+                }
+            }).open(); 
+        };
 
         window.openTestList = async (id, title) => {
             activeSeriesId=id; document.getElementById('testListOverlay').style.display='flex'; document.getElementById('current-series-title').innerText=title;

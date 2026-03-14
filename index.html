@@ -465,21 +465,34 @@
             onValue(ref(db, 'testSeries'), async s => { const d=s.val(); if(!d) return;
                 const pSnap = await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests`)); const p=pSnap.exists()?pSnap.val():{};
                 const g=document.getElementById('testSeriesGrid'); g.innerHTML=""; const l=document.getElementById('myTestsGrid'); l.innerHTML="";
+                
                 Object.keys(d).forEach(k => { 
                     const x = d[k]; 
-                    const isFree = x.isFree === true || x.price == 0;
+                    
+                    // FIXED PARSING LOGIC TO PREVENT SYNTAX ERRORS
+                    const pVal = x.price ? Number(x.price) : 0; 
+                    const isFree = (x.isFree === true || x.isFree === "true" || pVal === 0);
                     const pd = p[k]?.paid || isFree;
-                    g.innerHTML+=`<div class="col-6 col-md-4"><div class="glass-card text-center p-2"><img src="${x.image}" class="test-card-img"><h6 class="small fw-bold">${x.title}</h6><button onclick="handleTestAction('${k}',${x.price},'${x.title}', ${isFree})" class="btn w-100 mt-2">${pd?'Open':'₹'+x.price}</button></div></div>`; 
+                    
+                    // SETTING CORRECT TEXT FOR BUTTON
+                    let btnText = '₹ ' + pVal;
+                    if(isFree) btnText = 'Free Test';
+                    else if(pd) btnText = 'Open';
+
+                    g.innerHTML+=`<div class="col-6 col-md-4"><div class="glass-card text-center p-2"><img src="${x.image}" class="test-card-img"><h6 class="small fw-bold">${x.title}</h6><button onclick="handleTestAction('${k}',${pVal},'${x.title}', ${isFree})" class="btn w-100 mt-2">${btnText}</button></div></div>`; 
+                    
                     if(p[k]?.paid) l.innerHTML+=`<div class="glass-card d-flex justify-content-between align-items-center"><h6>${x.title}</h6><button onclick="openTestList('${k}','${x.title}')" class="btn btn-sm">VIEW</button></div>`; 
                 });
             }); 
         }
+        
         window.handleTestAction = async (id,pr,ti,isFree) => { 
             if(isFree) return openTestList(id, ti);
             const s=await get(ref(db, `users/${auth.currentUser.uid}/purchases/tests/${id}`)); 
             if(s.exists()&&s.val().paid) openTestList(id,ti); 
             else buyTest(id,pr); 
         };
+        
         window.buyNote=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/notes/${id}`),{paid:true}); loadNotes(); }}).open(); };
         window.buyTest=(id,p)=>{ new Razorpay({key:"rzp_live_Ry7zglI0OnE1Jo", amount:p*100, name:"Manoj", handler:async()=>{ await set(ref(db,`users/${auth.currentUser.uid}/purchases/tests/${id}`),{paid:true}); loadTestSeries(); }}).open(); };
 
